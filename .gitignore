@@ -1,0 +1,8 @@
+face_dataset/
+myenv/
+.env
+register/
+*test*.py
+*.h5
+*__pycache__/
+src/configs/*.json

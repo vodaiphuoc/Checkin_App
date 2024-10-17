@@ -1,0 +1,10 @@
+tensorflow
+opencv-python 
+gdown
+firebase-admin
+mtcnn
+fastapi
+pydantic
+uvicorn
+streamlit
+python-dotenv
