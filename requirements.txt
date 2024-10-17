@@ -1,10 +1,10 @@
+streamlit
 tensorflow
-opencv-python 
+opencv-python-headless
 gdown
 firebase-admin
 mtcnn
 fastapi
 pydantic
 uvicorn
-streamlit
 python-dotenv
