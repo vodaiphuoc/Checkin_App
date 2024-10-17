@@ -64,7 +64,6 @@ class ModelBase(object):
             model = model_make_func()
         # load weigths
         status, weigth_path = download_pretrained_weights(recog_model_name= model_name)
-        assert status == True
         model.load_weights(weigth_path)
         # model.load_weights(model_cfg.get("weight_path"))
         print("Model is ready for serving")
