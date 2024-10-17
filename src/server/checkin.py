@@ -3,6 +3,7 @@ from src.firebase import Firebase_Handler
 from src.server.Inference import EmbeddingModel
 import numpy as np
 from src.utils import get_program_config
+import time
 
 class Checking_Engine(object):
     def __init__(self) -> None:
@@ -13,6 +14,7 @@ class Checking_Engine(object):
         
         self.db_handler = Firebase_Handler(master_cfg= master_config)
         self.dataset = self.db_handler.get_dataset()
+        print('start at :',time.time())
     
     def __call__(self, input_image: np.ndarray, user_name:str) -> str:
         new_embeddings = self.model.forward(input_image=input_image)
