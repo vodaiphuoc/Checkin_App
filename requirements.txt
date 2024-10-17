@@ -1,4 +1,4 @@
-streamlit
+-i https://pypi.org/simple
 tensorflow
 opencv-python-headless
 gdown
