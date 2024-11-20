@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CHECKIN APP</title>
+    <link rel="icon" type="image/png" href="static/favicon.png"/>
+    <link rel="stylesheet" href="static/master.css">
+    <meta name="referrer" content="origin" />
+</head>
+<body>
+    <h1>SIGN UP A NEW ACCOUNT</h1>
+    <div id="form-container">
+        <form id = "signup-form">
+            <p>Please fill in this form</p>
+            <div class = "field">
+                <label for="name"><b>Full Name</b></label>
+                <input type="text" id = "signup-name" placeholder="Enter Your Name" name="name" required>    
+            </div>
+            
+            <div class = "field">
+                <label for="psw"><b>Password</b></label>
+                <input type="password" id = "signup-pass" placeholder="Enter Password" name="psw" required>
+            </div>
+
+            <div class = "field">
+                <label for="psw"><b>Type password again</b></label>
+                <input type="password" id = "signup-re-pass" placeholder="Enter Password" name="psw" required>
+            </div>
+            <button type="button" id = "submit-signup">Lets signup</button>
+        </form>
+    </div>
+    <div class = "region" id = "login-status">
+        Your login status:{{ Login_status }}
+    </div>
+    <div class="camera-preview">
+        <video id="signup-camera-preview" width="100%" height="auto" autoplay></video>
+    </div>
+    <script>
+        document.getElementById("signup-camera-preview").style.display = "none";
+        // Retrieve the necessary elements
+        var usernameInput = document.getElementById("signup-name");
+        var userpassInput = document.getElementById("signup-pass");
+        var userRePassInput = document.getElementById("signup-re-pass");
+        var signupform = document.getElementById("signup-form");
+        var formbutton = document.getElementById("submit-signup");
+        
+        // Add event listener to the button
+        formbutton.addEventListener("click", function() {
+            signupform.style.display = "none";
+            document.getElementById("signup-camera-preview").style.display = "block";
+            checkin_face("/signup", 'signup-camera-preview',
+                        usernameInput.value, userpassInput.value, userRePassInput.value);
+        });
+    </script>
+</body>

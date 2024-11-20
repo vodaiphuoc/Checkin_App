@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CHECKIN APP</title>
+    <link rel="icon" type="image/png" href="static/favicon.png"/>
+    <link rel="stylesheet" href="static/master.css">
+    <!-- <link rel="manifest" href="static/manifest.json"> -->
+    <meta name="viewport" content="width=device-width"/>
+    <meta name="referrer" content="origin" />
+</head>
+<body>
+    <h1>CHECKIN APP MAIN PAGE</h1>
+    <div class = "region">
+        <p id = "message"> {{ signup_message }}</p>
+        <a id = "signup-region" href="{{ url_for('switch_router', keyword = 'signup') }}">
+            <button id = "button" type="button">SIGNUP</button>
+        </a>
+    </div>
+
+    <div class = "region">
+        <p id = "message">{{ message }}</p>
+        <a id = "{{ keyword }}-region" href="{{ url_for('switch_router', keyword = keyword) }}">
+            <button id = "button" type="button">{{ BUTTON_NAME }}</button>
+        </a>
+    </div>
+    
+    <div class = "region" id = "login-status">
+        Your login status:{{ Login_status }}
+    </div>
+    <script type="module" src="static/app.js"></script>
+</body>
+

@@ -1,0 +1,17 @@
+tensorflow
+torch
+torchvision
+ngrok==1.3.0
+uvicorn==0.29.0
+fastapi==0.111.0
+fastapi-sessions
+loguru==0.7.2
+opencv-python-headless
+gdown
+firebase-admin
+mtcnn
+pydantic
+python-dotenv
+pillow
+pymongo[srv]
+pymongoarrow

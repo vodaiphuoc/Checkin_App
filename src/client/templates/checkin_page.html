@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CHECKIN APP</title>
+    <link rel="icon" type="image/png" href="static/favicon.png"/>
+    <script type="text/javascript" src="static/script.js"></script>
+    <meta name="referrer" content="origin" />
+</head>
+<body>
+    <hi>CHECK-IN</hi>
+    <div class="camera-preview">
+        <video id="camera-preview" width="100%" autoplay></video>
+    </div>
+    <script>
+        checkin_face("/checkin_process", "camera-preview");
+    </script>
+</body>
+</html>

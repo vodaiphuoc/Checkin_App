@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<!-- <p> The login page is used only when the cookie has been expired and 
+need user to login again. For safety, action required are login with both 
+(user name + password) and face checkin.
+</p>-->
+<html>
+<head>
+    <title>CHECKIN APP</title>
+    <link rel="icon" type="image/png" href="static/favicon.png"/>
+    <script type="text/javascript" src="static/script.js"></script>
+    <link rel="stylesheet" href="static/master.css">
+    <meta name="referrer" content="origin" />
+</script>
+</head>
+<body>
+    <h1>LOGIN</h1>
+    <div id="login-form-container">
+        <form id = "login-form">
+            <p>Please fill in this form</p>
+            <div class = "field">
+                <label for="name"><b>Full Name</b></label>
+                <input type="text" id = "login-name" placeholder="Enter Your Name" name="name" required>    
+            </div>
+            
+            <div class = "field">
+                <label for="psw"><b>Password</b></label>
+                <input type="password" id = "login-pass" placeholder="Enter Password" name="psw" required>
+            </div>
+
+            <button type="button" id = "submit-login">Lets login</button>
+        </form>
+    </div>
+    <div class = "region" id = "login-status">
+        Your login status:{{ Login_status }}
+    </div>
+    <div class="camera-preview">
+        <video id="login-camera-preview" width="100%" height="auto" autoplay></video>
+    </div>
+    <script>
+        document.getElementById("login-camera-preview").style.display = "none";
+        // Retrieve the necessary elements
+        var usernameInput = document.getElementById("login-name");
+        var userpassInput = document.getElementById("login-pass");
+        var loginform = document.getElementById("login-form");
+        var loginDiv = document.getElementById("login-form-container");
+        var formbutton = document.getElementById("submit-login");
+        
+        // Add event listener to the button
+        formbutton.addEventListener("click", function() {
+            loginDiv.style.display = "none";
+            document.getElementById("login-camera-preview").style.display = "block";
+            checkin_face("/login_process", 'login-camera-preview',
+                        usernameInput.value, userpassInput.value, null);
+        });
+
+
+    </script>
+</body>
