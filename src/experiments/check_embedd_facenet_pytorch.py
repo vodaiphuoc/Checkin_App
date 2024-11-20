@@ -128,7 +128,7 @@ class Test_Embeddings(object):
 				predict_name_list = []
 				for embedd_idx in range(0, num_embeddings, step):
 					query_embeddings = embeddings[embedd_idx: embedd_idx+step,:]
-					pred_name = engine.searchUserWithEmbeddings(batch_query_embeddings = query_embeddings)
+					pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = query_embeddings)
 					predict_name_list.append(pred_name)
 
 				result[user_name] = predict_name_list
