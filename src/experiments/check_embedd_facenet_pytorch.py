@@ -103,11 +103,11 @@ class Test_Embeddings(object):
 		return master_init_data
 
 	def pipelines(self, run_init_push: bool, evaluation: bool):
-		master_init_data = self._get_total_init_user_data()
+		master_config = get_program_config()
 		
 		if run_init_push:
+			master_init_data = self._get_total_init_user_data()
 			print('number init data: ',len(master_init_data))
-			master_config = get_program_config()
 			db_engine = Mongo_Handler(master_config= master_config,
 									ini_push= True,
 									init_data= master_init_data)
