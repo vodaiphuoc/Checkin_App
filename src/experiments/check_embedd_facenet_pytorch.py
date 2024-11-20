@@ -20,7 +20,7 @@ class Test_Embeddings(object):
                 r_state_dict_path: str,
                 o_state_dict_path: str,
 				):
-		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
+		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 		self.detector = MTCNN(image_size=160, 
                     margin=0, 
                     min_face_size=20,
@@ -30,7 +30,7 @@ class Test_Embeddings(object):
                     select_largest=True, 
                     selection_method=None, 
                     keep_all=True,
-                    device=device,
+                    device=self.device,
                     p_state_dict_path = p_state_dict_path,
                     r_state_dict_path = r_state_dict_path,
                     o_state_dict_path = o_state_dict_path,
@@ -39,7 +39,7 @@ class Test_Embeddings(object):
 			    									classify=False, 
 			    									num_classes=None, 
 			    									dropout_prob=0.6,
-			    									device=device,
+			    									device=self.device,
 			    									pretrained_weight_dir = pretrained_weight_dir
 	    									)
 		self.data_folder_path = data_folder_path
@@ -69,7 +69,7 @@ class Test_Embeddings(object):
 					filtered_faces.append(each_face[0])
 		assert len(filtered_faces) != 0
 		
-		stack_faces = torch.stack(filtered_faces)
+		stack_faces = torch.stack(filtered_faces).to(self.device)
 		embeddings = self.recognition_model(stack_faces)
 		assert embeddings.shape[0] == len(filtered_faces)
 		assert embeddings.shape[1] == 512
