@@ -1,4 +1,4 @@
-from src.server.models.Facenet_pytorch.mtcnn import MTCNN
+from src.server.models.Facenet_pytorch.mtcnn import MTCNN, fixed_image_standardization
 from src.server.models.Facenet_pytorch.inception_resnet_v1 import InceptionResnetV1
 from src.mongodb import Mongo_Handler
 from src.utils import get_program_config
@@ -21,20 +21,20 @@ class Test_Embeddings(object):
                 o_state_dict_path: str,
 				):
 		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-		self.detector = MTCNN(image_size=160, 
-                    margin=0, 
-                    min_face_size=20,
-                    thresholds=[0.6, 0.7, 0.7], 
-                    factor=0.709, 
-                    post_process=True,
-                    select_largest=True, 
-                    selection_method=None, 
-                    keep_all=True,
-                    device=self.device,
-                    p_state_dict_path = p_state_dict_path,
-                    r_state_dict_path = r_state_dict_path,
-                    o_state_dict_path = o_state_dict_path,
-                    )
+		# self.detector = MTCNN(image_size=160, 
+        #             margin=0, 
+        #             min_face_size=20,
+        #             thresholds=[0.6, 0.7, 0.7], 
+        #             factor=0.709, 
+        #             post_process=True,
+        #             select_largest=True, 
+        #             selection_method=None, 
+        #             keep_all=True,
+        #             device=self.device,
+        #             p_state_dict_path = p_state_dict_path,
+        #             r_state_dict_path = r_state_dict_path,
+        #             o_state_dict_path = o_state_dict_path,
+        #             )
 		self.recognition_model = InceptionResnetV1(pretrained = 'casia-webface', 
 			    									classify=False, 
 			    									num_classes=None, 
@@ -53,25 +53,27 @@ class Test_Embeddings(object):
 			user_imgs.append(image)
 
 		# infernce in batch
-		faces, probs = self.detector(img = user_imgs,
-									save_path = None,
-									return_prob= True)
+		# faces, probs = self.detector(img = user_imgs,
+		# 							save_path = None,
+		# 							return_prob= True)
 
-		assert len(faces) == len(user_imgs)
-		assert len(faces) == len(probs)
+		# assert len(faces) == len(user_imgs)
+		# assert len(faces) == len(probs)
 		
-		filtered_faces = []
-		for each_face, each_prob in zip(faces, probs):
-			if each_prob[0] is None:
-				continue
-			else:
-				if each_prob[0] > 0.8:
-					filtered_faces.append(each_face[0])
-		assert len(filtered_faces) != 0
+		# filtered_faces = []
+		# for each_face, each_prob in zip(faces, probs):
+		# 	if each_prob[0] is None:
+		# 		continue
+		# 	else:
+		# 		if each_prob[0] > 0.8:
+		# 			filtered_faces.append(each_face[0])
+		# assert len(filtered_faces) != 0
 		
-		stack_faces = torch.stack(filtered_faces).to(self.device)
+		stack_faces = torch.tensor(np.stack(user_imgs)).permute(0,3,1,2)
+		assert stack_faces.shape[0] == len(user_imgs) and stack_faces.shape[1] == 3
+		stack_faces =fixed_image_standardization(stack_faces).to(self.device)
 		embeddings = self.recognition_model(stack_faces)
-		assert embeddings.shape[0] == len(filtered_faces)
+		# assert embeddings.shape[0] == len(filtered_faces)
 		assert embeddings.shape[1] == 512
 
 		user_init_data = [{
@@ -96,6 +98,7 @@ class Test_Embeddings(object):
 
 	def pipeline(self):
 		master_init_data = self._get_total_init_user_data()
+		print('number init data: ',len(master_init_data))
 		master_config = get_program_config()
 		db_engine = Mongo_Handler(master_config= master_config,
 								ini_push= True,
