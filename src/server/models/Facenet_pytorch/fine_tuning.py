@@ -19,10 +19,10 @@ class TripLetDataset(torch.utils.data.Dataset):
 				)->None:
 		if is_train:
 			glob_iter = glob.glob(f"{data_folder_path}/*_*") + \
-						random.sample(glob.glob(f"{data_folder_path}/*"), k = 700)
+						random.sample(glob.glob(f"{data_folder_path}/*"), k = 900)
 		else:
 			glob_iter = glob.glob(f"{data_folder_path}/*_*") + \
-						glob.glob(f"{data_folder_path}/*")[:100]
+						glob.glob(f"{data_folder_path}/*")[:150]
 
 		number_other_user = int((len(glob_iter)-1)*ratio_other_user)
 		# user maps to other users
@@ -91,12 +91,12 @@ class FineTuner(object):
 				device: torch.device
 				):
 		
-		self.train_loader = Fine_tuning._make_loaders(is_train = True,
+		self.train_loader = FineTuner._make_loaders(is_train = True,
 													data_folder_path = data_folder_path, 
 													ratio_other_user = ratio_other_user,
 													batch_size = batch_size,
 													num_workers = num_workers)
-		self.val_loader = Fine_tuning._make_loaders(is_train = False,
+		self.val_loader = FineTuner._make_loaders(is_train = False,
 													data_folder_path = data_folder_path, 
 													ratio_other_user = ratio_other_user,
 													batch_size = batch_size,
@@ -107,9 +107,9 @@ class FineTuner(object):
 									num_classes=None, 
 									dropout_prob=0.6,
 									device = device,
-									pretrained_weight_dir = pretrained_weight_dir
-	    )
-	    self.optimizer = torch.optim.Adam(self.model.parameters(),lr = lr)
+									pretrained_weight_dir = pretrained_weight_dir)
+
+		self.optimizer = torch.optim.Adam(self.model.parameters(),lr = lr)
 
 		for name, module in self.model.named_modules():
 			if name not in self.freeze_list:
@@ -118,7 +118,7 @@ class FineTuner(object):
 			else:
 				for param in module.parameters():
 					param.requires_grad = True
-
+		
 		self.num_epochs = num_epochs
 		self.gradient_accumulate_steps = gradient_accumulate_steps
 		self.device = device
