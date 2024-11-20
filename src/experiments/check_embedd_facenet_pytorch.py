@@ -89,14 +89,9 @@ class Test_Embeddings(object):
 
 		for user_folder in tqdm(user_folders, total = len(user_folders)):
 			user_name = os.path.split(user_folder)[-1].split('.')[0]
-
-			try:
-				user_init_data = self._run_single_user(user_name = user_name)
-				master_init_data.extend(user_init_data)
-			except:
-				print(user_name)
-				continue
-
+			user_init_data = self._run_single_user(user_name = user_name)
+			master_init_data.extend(user_init_data)
+		
 		return master_init_data
 
 	def pipeline(self):
