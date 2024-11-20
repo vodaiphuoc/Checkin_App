@@ -9,6 +9,7 @@ import json
 from src.server.models.Facenet_pytorch.mtcnn import fixed_image_standardization
 from src.server.models.Facenet_pytorch.inception_resnet_v1 import InceptionResnetV1
 
+
 class TripLetDataset(torch.utils.data.Dataset):
 	"""For train dataset, all data, 
 	For validation set, collected users are combined with 100 celeb users
@@ -22,6 +23,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 
 	@staticmethod
 	def _make_index_list(is_train: bool,
+						shard_length:int,
 						data_folder_path: str,
 						ratio_other_user: float
 						)->None:
@@ -49,6 +51,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 		}
 
 		print('prepare index ...')
+		count_shard = 0
 		master_index = []
 		for each_dir in tqdm(glob_iter, total = len(glob_iter)):
 			# get total images of current user
@@ -65,10 +68,15 @@ class TripLetDataset(torch.utils.data.Dataset):
 		
 			master_index.extend(product_list)
 
-		save_object = {ith: ele for ith, ele in enumerate(master_index)}
-		save_index_file = 'master_index_train.json' if is_train else 'master_index_val.json'
-		with open(save_index_file,'w') as f:
-			json.dump(save_object,f, indent = 5)
+			if len(master_index) == shard_length:
+				save_object = {ith: ele for ith, ele in enumerate(master_index)}
+				save_index_file = f'master_index_train_{count_shard}.json' if is_train \
+							else f'master_index_val_{count_shard}.json'
+				with open(save_index_file,'w') as f:
+					json.dump(save_object,f, indent = 5)
+
+				master_index = []
+
 
 		print(f'Done index list: {len(master_index)}, train_set?: {is_train}')
 
