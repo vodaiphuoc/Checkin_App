@@ -82,6 +82,7 @@ class FineTuner(object):
 	def __init__(self, 
 				num_epochs:int,
 				gradient_accumulate_steps: int,
+				lr: float,
 				data_folder_path:str,
 				ratio_other_user:float,
 				pretrained_weight_dir: str,
@@ -108,7 +109,7 @@ class FineTuner(object):
 									device = device,
 									pretrained_weight_dir = pretrained_weight_dir
 	    )
-	    self.optimizer = torch.optim.Adam()
+	    self.optimizer = torch.optim.Adam(self.model.parameters(),lr = lr)
 
 		for name, module in self.model.named_modules():
 			if name not in self.freeze_list:
