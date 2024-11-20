@@ -9,7 +9,8 @@ import glob
 import torch
 import uuid
 from tqdm import tqdm
-
+import re
+import os
 
 class Test_Embeddings(object):
 	def __init__(self,
@@ -87,7 +88,7 @@ class Test_Embeddings(object):
 		master_init_data = []
 
 		for user_folder in tqdm(user_folders, total = len(user_folders)):
-			user_name = user_folder.split('\\')[-1]
+			user_name = os.path.split(user_folder)[-1].split('.')[0]
 
 			try:
 				user_init_data = self._run_single_user(user_name = user_name)
