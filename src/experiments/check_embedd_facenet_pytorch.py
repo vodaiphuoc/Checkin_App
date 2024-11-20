@@ -45,7 +45,7 @@ class Test_Embeddings(object):
 
 	def _run_single_user(self, user_name:str):
 		user_imgs = []
-		for path in glob.glob(f"{self.data_folder_path}\\{user_name}\\*"):
+		for path in glob.glob(f"{self.data_folder_path}/{user_name}/*"):
 			image = cv.imread(path)
 			assert image is not None, f"{path}"
 			image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
@@ -83,7 +83,7 @@ class Test_Embeddings(object):
 		return user_init_data
 
 	def _get_total_init_user_data(self):
-		user_folders = glob.glob(f"{self.data_folder_path}\\*")
+		user_folders = glob.glob(f"{self.data_folder_path}/*")
 		master_init_data = []
 
 		for user_folder in tqdm(user_folders, total = len(user_folders)):
