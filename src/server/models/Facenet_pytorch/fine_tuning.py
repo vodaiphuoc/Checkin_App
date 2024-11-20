@@ -5,6 +5,7 @@ import itertools
 import random
 from tqdm import tqdm
 import cv2 as cv
+import json
 from src.server.models.Facenet_pytorch.mtcnn import fixed_image_standardization
 from src.server.models.Facenet_pytorch.inception_resnet_v1 import InceptionResnetV1
 
@@ -17,9 +18,14 @@ class TripLetDataset(torch.utils.data.Dataset):
 				data_folder_path: str, 
 				ratio_other_user: float
 				)->None:
+		
+	@staticmethod
+	def _make_index_list(is_train: bool,
+						data_folder_path: str, 
+						ratio_other_user: float)->None:
 		if is_train:
 			glob_iter = glob.glob(f"{data_folder_path}/*_*") + \
-						random.sample(glob.glob(f"{data_folder_path}/*"), k = 900)
+						random.sample(glob.glob(f"{data_folder_path}/*"), k = 600)
 		else:
 			glob_iter = glob.glob(f"{data_folder_path}/*_*") + \
 						glob.glob(f"{data_folder_path}/*")[:150]
@@ -41,7 +47,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 		}
 
 		print('prepare index ...')
-		self.master_index = []
+		master_index = []
 		for each_dir in tqdm(glob_iter, total = len(glob_iter)):
 			# get total images of current user
 			imgs_anchor = user2img_path[each_dir]
@@ -55,9 +61,14 @@ class TripLetDataset(torch.utils.data.Dataset):
 							itertools.product(positives,neg_img_list)
 							]
 		
-			self.master_index.extend(product_list)
+			master_index.extend(product_list)
 
-		print(f'Done index list: {len(self.master_index)}, train_set?: {is_train}')
+		save_object = {ith: ele for ith, ele in enumerate(master_index)}
+		save_index_file = 'master_index_train.json' if is_train else 'master_index_val.json'
+		with open(save_index_file,'w') as f:
+			json.dump(save_object,f, indent = 5)
+
+		print(f'Done index list: {len(master_index)}, train_set?: {is_train}')
 
 	def __len__(self):
 		return len(self.master_index)
