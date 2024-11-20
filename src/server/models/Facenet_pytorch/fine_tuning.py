@@ -18,11 +18,13 @@ class TripLetDataset(torch.utils.data.Dataset):
 				data_folder_path: str, 
 				ratio_other_user: float
 				)->None:
-		
+		return None
+
 	@staticmethod
 	def _make_index_list(is_train: bool,
-						data_folder_path: str, 
-						ratio_other_user: float)->None:
+						data_folder_path: str,
+						ratio_other_user: float
+						)->None:
 		if is_train:
 			glob_iter = glob.glob(f"{data_folder_path}/*_*") + \
 						random.sample(glob.glob(f"{data_folder_path}/*"), k = 600)
