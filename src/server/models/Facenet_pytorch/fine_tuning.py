@@ -69,11 +69,10 @@ class TripLetDataset(torch.utils.data.Dataset):
 			master_index.extend(product_list)
 
 			if len(master_index) == shard_length:
-				save_object = {ith: ele for ith, ele in enumerate(master_index)}
 				save_index_file = f'master_index_train_{count_shard}.json' if is_train \
 							else f'master_index_val_{count_shard}.json'
 				with open(save_index_file,'w') as f:
-					json.dump(save_object,f, indent = 5)
+					json.dump(master_index,f, indent = 5)
 
 				master_index = []
 
