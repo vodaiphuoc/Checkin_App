@@ -91,15 +91,15 @@ class FineTuner(object):
 				):
 		
 		self.train_loader = Fine_tuning._make_loaders(is_train = True,
-													data_folder_path, 
-													ratio_other_user,
-													batch_size,
-													num_workers)
+													data_folder_path = data_folder_path, 
+													ratio_other_user = ratio_other_user,
+													batch_size = batch_size,
+													num_workers = num_workers)
 		self.val_loader = Fine_tuning._make_loaders(is_train = False,
-													data_folder_path, 
-													ratio_other_user,
-													batch_size,
-													num_workers)
+													data_folder_path = data_folder_path, 
+													ratio_other_user = ratio_other_user,
+													batch_size = batch_size,
+													num_workers = num_workers)
 
 		self.model = InceptionResnetV1(pretrained = 'casia-webface', 
 									classify=False,
