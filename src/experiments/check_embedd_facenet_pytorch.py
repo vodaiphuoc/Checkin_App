@@ -44,7 +44,10 @@ class Test_Embeddings(object):
 	    									)
 		self.data_folder_path = data_folder_path
 
-	def _run_single_user(self, user_name:str):
+	def _run_single_user(self, 
+						user_name:str, 
+						return_embedding_only: bool = False
+						):
 		user_imgs = []
 		for path in glob.glob(f"{self.data_folder_path}/{user_name}/*"):
 			image = cv.imread(path)
@@ -76,14 +79,17 @@ class Test_Embeddings(object):
 		# assert embeddings.shape[0] == len(filtered_faces)
 		assert embeddings.shape[1] == 512
 
-		user_init_data = [{
-			'user_name': user_name,
-			'password': '123',
-			'embedding': embeddings[id].tolist(),
-		} 
-		for id in range(embeddings.shape[0])
-		]
-		return user_init_data
+		if return_embedding_only:
+			return embeddings
+		else:
+			user_init_data = [{
+				'user_name': user_name,
+				'password': '123',
+				'embedding': embeddings[id].tolist(),
+			} 
+			for id in range(embeddings.shape[0])
+			]
+			return user_init_data
 
 	def _get_total_init_user_data(self):
 		user_folders = glob.glob(f"{self.data_folder_path}/*")
@@ -96,11 +102,35 @@ class Test_Embeddings(object):
 		
 		return master_init_data
 
-	def pipeline(self):
+	def pipelines(self, run_init_push: bool, evaluation: bool):
 		master_init_data = self._get_total_init_user_data()
-		print('number init data: ',len(master_init_data))
-		master_config = get_program_config()
-		db_engine = Mongo_Handler(master_config= master_config,
-								ini_push= True,
-								init_data= master_init_data)
 		
+		if run_init_push:
+			print('number init data: ',len(master_init_data))
+			master_config = get_program_config()
+			db_engine = Mongo_Handler(master_config= master_config,
+									ini_push= True,
+									init_data= master_init_data)
+			
+
+		if evaluation:
+			db_engine = Mongo_Handler(master_config= master_config,
+									ini_push= False)
+			
+			result = {}
+			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
+				user_name = os.path.split(user_folder)[-1].split('.')[0]
+				embeddings = self._run_single_user(user_name = user_name, 
+													return_embedding_only = True)
+
+				num_embeddings = embeddings.shape[0]
+				step = int(num_embeddings)//3
+				predict_name_list = []
+				for embedd_idx in range(0, num_embeddings, step):
+					query_embeddings = embeddings[embedd_idx: embedd_idx+step,:]
+					pred_name = engine.searchUserWithEmbeddings(batch_query_embeddings = query_embeddings)
+					predict_name_list.append(pred_name)
+
+				result[user_name] = predict_name_list
+
+			print(result)
