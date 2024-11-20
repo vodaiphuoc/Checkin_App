@@ -119,7 +119,7 @@ class Test_Embeddings(object):
 			
 			result = {}
 			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
-				user_name = os.path.split(user_folder)[-1].split('.')[0]
+				user_name = os.path.split(main_user_dir)[-1].split('.')[0]
 				embeddings = self._run_single_user(user_name = user_name, 
 													return_embedding_only = True)
 
