@@ -86,7 +86,7 @@ class Mongo_Handler(object):
                     "type": "vector",
                     "path": "embedding",
                     "numDimensions": vector_dim,
-                    "similarity": "dotProduct"
+                    "similarity": "cosine"   # euclidean | cosine | dotProduct
                 }
                 ]
             },
