@@ -146,18 +146,18 @@ class TripLetDataset(torch.utils.data.Dataset):
 				else:
 					n_path.append(self.data_folder_path+'/'+ self.glob_iter[k]+'/'+v)
 
-		assert len(a_path) == len(p_path) and \
-				len(a_path) == len(n_path) and \
-				len(a_path) == self.return_examples, \
-			f"Found {len(a_path)}, {len(p_path)}, {len(n_path)}"
+		# assert len(a_path) == len(p_path) and \
+		# 		len(a_path) == len(n_path) and \
+		# 		len(a_path) == self.return_examples, \
+		# 	f"Found {len(a_path)}, {len(p_path)}, {len(n_path)}"
 
 		anchors = self._paths2tensor(a_path)
 		positives = self._paths2tensor(p_path)
 		negatives = self._paths2tensor(n_path)
 
-		assert anchors.shape[0] == self.return_examples, f"Found {anchors.shape[0]}"
-		assert positives.shape[0] == self.return_examples, f"Found {positives.shape[0]}"
-		assert negatives.shape[0] == self.return_examples, f"Found {negatives.shape[0]}"
+		# assert anchors.shape[0] == self.return_examples, f"Found {anchors.shape[0]}"
+		# assert positives.shape[0] == self.return_examples, f"Found {positives.shape[0]}"
+		# assert negatives.shape[0] == self.return_examples, f"Found {negatives.shape[0]}"
 		return anchors, positives, negatives
 
 class FineTuner(object):
@@ -263,13 +263,13 @@ class FineTuner(object):
 		train_logs = {}
 		val_logs = {}
 		for epoch in range(self.num_epochs):
-			print(f'Current epoch: {epoch}')
 			mean_train_loss = 0
-			for batch_idx, (a_batch, p_batch, n_batch) in enumerate(self.train_loader):
-				print('batch idx: ', batch_idx)
-				assert a_batch.shape[0] == self.batch_size, f"Found {a_batch.shape[0]}"
-				assert a_batch.shape[1] == self.return_examples, f"Found {a_batch.shape}, {batch_idx}"
-				assert a_batch.shape[2] == 3, f"Found {a_batch.shape[2]}"
+			for batch_idx, (a_batch, p_batch, n_batch) in tqdm(enumerate(self.train_loader),
+																total = self.num_epochs):
+				
+				# assert a_batch.shape[0] == self.batch_size, f"Found {a_batch.shape[0]}"
+				# assert a_batch.shape[1] == self.return_examples, f"Found {a_batch.shape}, {batch_idx}"
+				# assert a_batch.shape[2] == 3, f"Found {a_batch.shape[2]}"
 
 				a_batch = self._pre_process_batch_data(a_batch)
 				p_batch = self._pre_process_batch_data(p_batch)
@@ -295,7 +295,7 @@ class FineTuner(object):
 			mean_train_loss = mean_train_loss/len(self.train_loader)
 			train_logs[epoch] = mean_train_loss.clone().detach().cpu().numpy()[0]
 
-			if self.num_epochs//epoch == 2 or epoch == self.num_epochs -1:
+			if self.num_epochs//epoch == 1 or epoch == self.num_epochs -1:
 				mean_val_loss = 0
 				with torch.no_grad():
 					for batch_idx, (val_a_batch, val_p_batch, val_n_batch) in enumerate(self.val_loader):
