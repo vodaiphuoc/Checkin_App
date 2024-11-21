@@ -16,68 +16,87 @@ class TripLetDataset(torch.utils.data.Dataset):
 	"""
 	def __init__(self, 
 				is_train: bool,
-				data_folder_path: str, 
+				data_folder_path: str,
 				ratio_other_user: float
 				)->None:
 		return None
 
 	@staticmethod
+	def _offload_user_folders(usr_folder_list: List[str])->None:
+		with open('usr_folder_list.json','w') as f:
+			json.dump([{k:v} for k, v in enumerate(usr_folder_list)],f, indent = 5)
+
+	@staticmethod
 	def _make_index_list(is_train: bool,
+						offload:bool,
 						shard_length:int,
 						data_folder_path: str,
-						ratio_other_user: float
+						ratio_other_user: float,
+						number_celeb_in_train: int = 500,
+						number_celeb_in_val: int = 150
 						)->None:
+		# user folders
 		if is_train:
 			glob_iter = glob.glob(f"{data_folder_path}/*_*") + \
-						random.sample(glob.glob(f"{data_folder_path}/*"), k = 600)
+						random.sample(glob.glob(f"{data_folder_path}/[0-9]*"), k = number_celeb_in_train)
 		else:
 			glob_iter = glob.glob(f"{data_folder_path}/*_*") + \
-						glob.glob(f"{data_folder_path}/*")[:150]
+						glob.glob(f"{data_folder_path}/[0-9]*")[:number_celeb_in_val]
+
+		if offload:
+			TripLetDataset._offload_user_folders(glob_iter)
 
 		number_other_user = int((len(glob_iter)-1)*ratio_other_user)
 		# user maps to other users
-		user2other_users = {
-			current_dir:random.sample([_each_dir for _each_dir in glob_iter 
-						if current_dir != _each_dir
-					], k = number_other_user)
-			for current_dir in glob_iter
+		userIdx2other_usersIdx = {
+			user_dir_idx:random.sample([ _each_dix for _each_dix in range(len(glob_iter)) 
+											if glob_iter[user_dir_idx] != glob_iter[_each_dix]
+										],
+										k = number_other_user)
+			for user_dir_idx in range(len(glob_iter))
 		}
 		# user maps to its image paths
 		user2img_path = {
-			each_dir: [
-				_path for _path in glob.glob(f"{each_dir}/*")
+			user_dir_idx: [
+				_path for _path in glob.glob('*.*',root_dir = f"{glob_iter[user_dir_idx]}")
 			]
-			for each_dir in glob_iter
+			for user_dir_idx in range(len(glob_iter))
 		}
 
 		print('prepare index ...')
 		count_shard = 0
 		master_index = []
-		for each_dir in tqdm(glob_iter, total = len(glob_iter)):
+		for user_dir_idx in tqdm(range(len(glob_iter)), total = len(glob_iter)):
 			# get total images of current user
-			imgs_anchor = user2img_path[each_dir]
-			positives = list(itertools.permutations(imgs_anchor,2))
+			anchor_imgs_path = user2img_path[user_dir_idx]
+			positives = [{user_dir_idx:file_name_pair} 
+							for file_name_pair in itertools.permutations(anchor_imgs_path,2)
+						]
 			
 			neg_img_list = []
-			for other_user in user2other_users[each_dir]:
-				neg_img_list.extend(user2img_path[other_user])
+			for other_user_idx in userIdx2other_usersIdx[user_dir_idx]:
+				neg_img_list.extend([
+										{other_user_idx: img_file_name} 
+										for img_file_name in user2img_path[other_user_idx]
+									])
 
-			product_list = [(a,p,n) for ((a,p),n) in
+			# merge dict from itertool.product
+			product_list = [ k_ap|k_n for (k_ap, k_n) in
 							itertools.product(positives,neg_img_list)
 							]
-		
+			
 			master_index.extend(product_list)
 
-			if len(master_index) == shard_length:
+			if offload and len(master_index) == shard_length:
 				save_index_file = f'master_index_train_{count_shard}.json' if is_train \
 							else f'master_index_val_{count_shard}.json'
 				with open(save_index_file,'w') as f:
-					json.dump(master_index,f, indent = 5)
-
+					json.dump(master_index,f)
 				master_index = []
 
-
 		print(f'Done index list: {len(master_index)}, train_set?: {is_train}')
+		if not offload:
+			return master_index
 
 	def __len__(self):
 		return len(self.master_index)
