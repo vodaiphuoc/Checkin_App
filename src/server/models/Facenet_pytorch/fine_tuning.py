@@ -69,7 +69,8 @@ class TripLetDataset(torch.utils.data.Dataset):
 		# user maps to its image paths
 		user2img_path = {
 			user_dir_idx: [
-				_path for _path in glob.glob('*.*',root_dir = f"{glob_iter[user_dir_idx]}")
+				_path for _path in glob.glob('*.*',
+									root_dir = f"{data_folder_path+'/'+glob_iter[user_dir_idx]}")
 			]
 			for user_dir_idx in range(len(glob_iter))
 		}
@@ -107,12 +108,11 @@ class TripLetDataset(torch.utils.data.Dataset):
 															k = len(self.user2img_path[other_user_idx])//7)
 										])
 					
-
 			# merge dict from itertool.product
 			product_list = [ k_ap|k_n for (k_ap, k_n) in
 							itertools.product(positives,neg_img_list)
 							]
-			
+			assert len(product_list) != 0
 			master_index.extend(product_list)
 			if len(master_index) > self.return_examples:
 				break
