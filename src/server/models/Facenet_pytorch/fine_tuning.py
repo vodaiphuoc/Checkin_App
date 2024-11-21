@@ -36,8 +36,8 @@ class TripLetDataset(torch.utils.data.Dataset):
 		self.data_folder_path = data_folder_path
 		self.return_examples = return_examples
 
-		self.index_iter = [list(range(user_dir_idx, user_dir_idx + 3)) 
-							for user_dir_idx in range(0,len(self.glob_iter), 3)
+		self.index_iter = [list(range(user_dir_idx, user_dir_idx + 2)) 
+							for user_dir_idx in range(0,len(self.glob_iter), 2)
 							]
 		return None
 
@@ -98,14 +98,14 @@ class TripLetDataset(torch.utils.data.Dataset):
 			
 			neg_img_list = []
 			for other_user_idx in self.userIdx2other_usersIdx[user_dir_idx]:
-				if len(neg_img_list) > int(len(positives)*0.3):
+				if len(neg_img_list) > int(len(positives)*0.2):
 					break
 				else:
 					neg_img_list.extend([
 											{other_user_idx: img_file_name} 
 											for img_file_name in 
 											random.sample(self.user2img_path[other_user_idx], 
-															k = len(self.user2img_path[other_user_idx])//7)
+															k = len(self.user2img_path[other_user_idx])//8)
 										])
 					
 			# merge dict from itertool.product
