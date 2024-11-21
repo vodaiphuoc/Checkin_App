@@ -125,7 +125,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 		for _path in path_list:
 			image = cv.imread(_path)
 			image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
-			image_tensor = torch.tensor(image).permute(2,0,1).to(torch.float32)
+			image_tensor = torch.tensor(image).permute(2,0,1)
 			return_tensor.append(image_tensor)
 
 		return fixed_image_standardization(torch.stack(return_tensor)).to(torch.float32)
