@@ -1,6 +1,6 @@
 import torch
 import glob
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 import itertools
 import random
 from tqdm import tqdm
@@ -15,10 +15,34 @@ class TripLetDataset(torch.utils.data.Dataset):
 	For validation set, collected users are combined with 100 celeb users
 	"""
 	def __init__(self, 
-				is_train: bool,
-				data_folder_path: str,
-				ratio_other_user: float
+				return_examples = 512,
+				is_train = True,
+				offload = False,
+				shard_length = 2000,
+				data_folder_path = 'face_dataset\\faces_only', 
+				ratio_other_user = 0.2,
+				number_celeb_in_train = 500,
+				number_celeb_in_val = 150
 				)->None:
+
+		(
+			self.glob_iter,
+			self.userIdx2other_usersIdx, 
+			self.user2img_path
+		) = TripLetDataset._make_index_list(is_train = is_train,
+											offload = offload,
+											shard_length = shard_length,
+											data_folder_path = data_folder_path, 
+											ratio_other_user = ratio_other_user,
+											number_celeb_in_train = number_celeb_in_train,
+											number_celeb_in_val = number_celeb_in_val
+											)
+
+		self.return_examples = return_examples
+
+		self.index_iter = [list(range(user_dir_idx, user_dir_idx + 3)) 
+							for user_dir_idx in range(0,len(self.glob_iter), 3)
+							]
 		return None
 
 	@staticmethod
@@ -63,22 +87,31 @@ class TripLetDataset(torch.utils.data.Dataset):
 			for user_dir_idx in range(len(glob_iter))
 		}
 
-		print('prepare index ...')
-		count_shard = 0
+		return glob_iter, userIdx2other_usersIdx, user2img_path
+		
+
+	def __len__(self):
+		return len(self.index_iter)
+
+
+	def _get_triplet_index(self, index_list: List[int])-> List[Dict[str,Any]]:
 		master_index = []
-		for user_dir_idx in tqdm(range(len(glob_iter)), total = len(glob_iter)):
+		for user_dir_idx in index_list:
 			# get total images of current user
-			anchor_imgs_path = user2img_path[user_dir_idx]
-			positives = [{user_dir_idx:file_name_pair} 
+			anchor_imgs_path = self.user2img_path[user_dir_idx]
+			positives = [
+							{user_dir_idx:file_name_pair} 
 							for file_name_pair in itertools.permutations(anchor_imgs_path,2)
 						]
 			
 			neg_img_list = []
-			for other_user_idx in userIdx2other_usersIdx[user_dir_idx]:
+			for other_user_idx in self.userIdx2other_usersIdx[user_dir_idx]:
 				neg_img_list.extend([
 										{other_user_idx: img_file_name} 
-										for img_file_name in user2img_path[other_user_idx]
+										for img_file_name in self.user2img_path[other_user_idx]
 									])
+				if len(neg_img_list) > self.return_examples//len(positives) + 1:
+					break
 
 			# merge dict from itertool.product
 			product_list = [ k_ap|k_n for (k_ap, k_n) in
@@ -87,33 +120,43 @@ class TripLetDataset(torch.utils.data.Dataset):
 			
 			master_index.extend(product_list)
 
-			if offload and len(master_index) == shard_length:
-				save_index_file = f'master_index_train_{count_shard}.json' if is_train \
-							else f'master_index_val_{count_shard}.json'
-				with open(save_index_file,'w') as f:
-					json.dump(master_index,f)
-				master_index = []
+		return master_index[: self.return_examples]
 
-		print(f'Done index list: {len(master_index)}, train_set?: {is_train}')
-		if not offload:
-			return master_index
-
-	def __len__(self):
-		return len(self.master_index)
-
-	def __getitem__(self, index:int)->Tuple[torch.Tensor]:
-		a_path, p_path, n_path = self.master_index[index]
-
-		return_triplet = []
-
-		for _path in [a_path, p_path, n_path]:
+	def _paths2tensor(self, path_list: List[str])->torch.Tensor:
+		return_tensor = []
+		for _path in path_list:
 			image = cv.imread(_path)
 			image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
 			image_tensor = torch.tensor(image).permute(2,0,1).to(float)
-			image_tensor = fixed_image_standardization(image_tensor)
-			return_triplet.append(image_tensor)
+			return_tensor.append(image_tensor)
 
-		return tuple(return_triplet)
+		return fixed_image_standardization(torch.stack(return_tensor))
+
+	def __getitem__(self, index:int)->Tuple[torch.Tensor]:
+		"""
+		Return:
+			- Tuple of tensor shape (self.return_examples,3,160,160)
+		"""
+		list_ids = self.index_iter[index]
+		triplet_idx = self._get_triplet_index(list_ids)
+
+		assert len(triplet_idx) == self.return_examples
+
+		a_path, p_path, n_path = [], [], []
+		for map_dict in triplet_idx:
+			full_paths = []
+			for k, v in map_dict.items():
+				if isinstance(v,tuple):
+					a_path.append(self.glob_iter[k]+'/'+v[0])
+					p_path.append(self.glob_iter[k]+'/'+v[1])
+				else:
+					n_path.append(self.glob_iter[k]+'/'+v)
+
+		anchors = self._paths2tensor(a_path)
+		positives = self._paths2tensor(p_path)
+		negatives = self._paths2tensor(n_path)
+
+		return anchors, positives, negatives
 
 class FineTuner(object):
 	freeze_list = ['mixed_7a','repeat_3', 'block8', 'avgpool_1a', 'last_linear', 'last_bn']
