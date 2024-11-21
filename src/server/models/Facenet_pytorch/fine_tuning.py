@@ -293,7 +293,7 @@ class FineTuner(object):
 					self.optimizer.zero_grad()
 
 			mean_train_loss = mean_train_loss/len(self.train_loader)
-			train_logs[epoch] = mean_train_loss.clone().detach().cpu().numpy()[0]
+			train_logs[epoch] = mean_train_loss.clone().detach().cpu().numpy()
 
 			if self.num_epochs//epoch == 1 or epoch == self.num_epochs -1:
 				mean_val_loss = 0
@@ -313,7 +313,7 @@ class FineTuner(object):
 						mean_val_loss += self.loss_fn(a_embeddings, p_embeddings, n_embeddings)
 
 				mean_val_loss = mean_val_loss/len(self.val_loader)
-				val_logs[epoch] = mean_val_loss.clone().detach().cpu().numpy()[0]
+				val_logs[epoch] = mean_val_loss.clone().detach().cpu().numpy()
 
 		print(train_logs)
 		print(val_logs)
