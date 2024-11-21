@@ -120,7 +120,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 		else:
 			ratio = self.return_examples//len(product_list) + 1
 			product_list = product_list*ratio
-			return return product_list[:self.return_examples]
+			return product_list[:self.return_examples]
 
 	def _paths2tensor(self, path_list: List[str])->torch.Tensor:
 		return_tensor = []
