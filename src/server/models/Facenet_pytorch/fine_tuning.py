@@ -90,8 +90,8 @@ class TripLetDataset(torch.utils.data.Dataset):
 			# get total images of current user
 			anchor_imgs_path = self.user2img_path[user_dir_idx]
 			positives = [
-							{user_dir_idx:file_name_pair} 
-							for file_name_pair in itertools.permutations(anchor_imgs_path,2)
+							{user_dir_idx:file_name_pair}
+							for file_name_pair in itertools.combinations(anchor_imgs_path,2)
 						]
 			
 			neg_img_list = []
@@ -100,9 +100,9 @@ class TripLetDataset(torch.utils.data.Dataset):
 										{other_user_idx: img_file_name} 
 										for img_file_name in 
 										random.sample(self.user2img_path[other_user_idx], 
-														k = len(self.user2img_path[other_user_idx])//3)
+														k = len(self.user2img_path[other_user_idx])//5)
 									])
-				if len(neg_img_list) > int(len(positives)*0.5):
+				if len(neg_img_list) > int(len(positives)*0.4):
 					break
 
 			# merge dict from itertool.product
