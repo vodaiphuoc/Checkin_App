@@ -93,7 +93,8 @@ class TripLetDataset(torch.utils.data.Dataset):
 			anchor_imgs_path = self.user2img_path[user_dir_idx]
 			positives = [
 							{user_dir_idx:file_name_pair}
-							for file_name_pair in itertools.combinations(anchor_imgs_path,2)
+							for file_name_pair in random.sample(itertools.combinations(anchor_imgs_path,2),
+																k = len(anchor_imgs_path))
 						]
 			
 			neg_img_list = []
