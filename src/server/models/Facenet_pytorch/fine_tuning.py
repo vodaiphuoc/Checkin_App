@@ -114,7 +114,13 @@ class TripLetDataset(torch.utils.data.Dataset):
 		assert len(product_list) != 0
 		
 		# print('Length product_list: ',len(product_list))
-		return product_list[: self.return_examples]
+
+		if len(product_list) >= self.return_examples:
+			return product_list[:self.return_examples]
+		else:
+			ratio = self.return_examples//len(product_list) + 1
+			product_list = product_list*ratio
+			return return product_list[:self.return_examples]
 
 	def _paths2tensor(self, path_list: List[str])->torch.Tensor:
 		return_tensor = []
