@@ -262,7 +262,7 @@ class FineTuner(object):
 		"""Main training function"""
 		train_logs = {}
 		val_logs = {}
-		for epoch in range(self.num_epochs):
+		for epoch in range(1,self.num_epochs+1):
 			mean_train_loss = 0
 			for batch_idx, (a_batch, p_batch, n_batch) in tqdm(enumerate(self.train_loader),
 																total = self.num_epochs):
@@ -295,7 +295,7 @@ class FineTuner(object):
 			mean_train_loss = mean_train_loss/len(self.train_loader)
 			train_logs[epoch] = mean_train_loss.clone().detach().cpu().numpy()
 
-			if self.num_epochs//epoch == 1 or epoch == self.num_epochs -1:
+			if self.num_epochs//epoch == 2 or epoch == self.num_epochs:
 				mean_val_loss = 0
 				with torch.no_grad():
 					for batch_idx, (val_a_batch, val_p_batch, val_n_batch) in enumerate(self.val_loader):
