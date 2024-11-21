@@ -303,12 +303,12 @@ class FineTuner(object):
 						val_p_batch = self._pre_process_batch_data(val_p_batch)
 						val_n_batch = self._pre_process_batch_data(val_n_batch)
 
-						embeddings = self.model(torch.cat([val_a_batch, val_p_batch, val_n_path], 
+						embeddings = self.model(torch.cat([val_a_batch, val_p_batch, val_n_batch], 
 												dim = 0))
 
-						a_embeddings = embeddings[0: self.batch_size*self.return_examples,:]
-						p_embeddings = embeddings[self.batch_size: 2*self.batch_size,:]
-						n_embeddings = embeddings[2*self.batch_size:,:]
+						a_embeddings = embeddings[0: self.master_batch_size,:]
+						p_embeddings = embeddings[self.master_batch_size: 2*self.master_batch_size,:]
+						n_embeddings = embeddings[2*self.master_batch_size:,:]
 
 						mean_val_loss += self.loss_fn(a_embeddings, p_embeddings, n_embeddings)
 
