@@ -36,8 +36,8 @@ class TripLetDataset(torch.utils.data.Dataset):
 		self.data_folder_path = data_folder_path
 		self.return_examples = return_examples
 
-		self.index_iter = [list(range(user_dir_idx, user_dir_idx + 2)) 
-							for user_dir_idx in range(0,len(self.glob_iter), 2)
+		self.index_iter = [ user_dir_idx
+							for user_dir_idx in range(len(self.glob_iter))
 							]
 		return None
 
@@ -81,45 +81,40 @@ class TripLetDataset(torch.utils.data.Dataset):
 	def __len__(self):
 		return len(self.index_iter)
 
-	def _get_triplet_index(self, index_list: List[int])-> List[Dict[str,Any]]:
+	def _get_triplet_index(self, user_dir_idx: int)-> List[Dict[str,Any]]:
 		"""
 		Given a list of index (user folder dir)
 		return mapping from user anchor/positive files with 
 		negative files
 		"""
-		master_index = []
-		for user_dir_idx in index_list:
-			# get total images of current user
-			anchor_imgs_path = self.user2img_path[user_dir_idx]
-			positives = [
-							{user_dir_idx:file_name_pair}
-							for file_name_pair \
-							in itertools.combinations(anchor_imgs_path,2)
-						]
-			
-			neg_img_list = []
-			for other_user_idx in self.userIdx2other_usersIdx[user_dir_idx]:
-				if len(neg_img_list) > int(len(positives)*0.2):
-					break
-				else:
-					neg_img_list.extend([
-											{other_user_idx: img_file_name} 
-											for img_file_name in 
-											random.sample(self.user2img_path[other_user_idx], 
-															k = len(self.user2img_path[other_user_idx])//7)
-										])
-					
-			# merge dict from itertool.product
-			product_list = [ k_ap|k_n for (k_ap, k_n) in
-							itertools.product(positives,neg_img_list)
-							]
-			assert len(product_list) != 0
-			master_index.extend(product_list)
-			if len(master_index) > self.return_examples:
+		# get total images of current user
+		anchor_imgs_path = self.user2img_path[user_dir_idx]
+		positives = [
+						{user_dir_idx:file_name_pair}
+						for file_name_pair \
+						in itertools.combinations(anchor_imgs_path,2)
+					]
+		
+		neg_img_list = []
+		for other_user_idx in self.userIdx2other_usersIdx[user_dir_idx]:
+			if len(neg_img_list) > int(self.return_examples//len(positives)):
 				break
-
-		print('Length master index: ',len(master_index))
-		return master_index[: self.return_examples]
+			else:
+				neg_img_list.extend([
+										{other_user_idx: img_file_name} 
+										for img_file_name in 
+										random.sample(self.user2img_path[other_user_idx], 
+														k = len(self.user2img_path[other_user_idx])//7)
+									])
+		
+		# merge dict from itertool.product
+		product_list = [ k_ap|k_n for (k_ap, k_n) in
+						itertools.product(positives,neg_img_list)
+						]
+		assert len(product_list) != 0
+		
+		print('Length product_list: ',len(product_list))
+		return product_list[: self.return_examples]
 
 	def _paths2tensor(self, path_list: List[str])->torch.Tensor:
 		return_tensor = []
@@ -136,8 +131,8 @@ class TripLetDataset(torch.utils.data.Dataset):
 		Return:
 			- Tuple of tensor shape (self.return_examples,3,160,160)
 		"""
-		list_ids = self.index_iter[index]
-		triplet_idx = self._get_triplet_index(list_ids)
+		idx = self.index_iter[index]
+		triplet_idx = self._get_triplet_index(idx)
 
 		assert len(triplet_idx) == self.return_examples, f"Found {len(triplet_idx)}"
 
