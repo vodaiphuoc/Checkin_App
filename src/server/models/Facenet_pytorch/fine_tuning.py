@@ -98,9 +98,11 @@ class TripLetDataset(torch.utils.data.Dataset):
 			for other_user_idx in self.userIdx2other_usersIdx[user_dir_idx]:
 				neg_img_list.extend([
 										{other_user_idx: img_file_name} 
-										for img_file_name in self.user2img_path[other_user_idx]
+										for img_file_name in 
+										random.sample(self.user2img_path[other_user_idx], 
+														k = len(self.user2img_path[other_user_idx])//3)
 									])
-				if len(neg_img_list) > int(len(positives)*1.2):
+				if len(neg_img_list) > int(len(positives)*0.5):
 					break
 
 			# merge dict from itertool.product
@@ -110,6 +112,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 			
 			master_index.extend(product_list)
 
+		print('Length master index: ',len(master_index))
 		return master_index[: self.return_examples]
 
 	def _paths2tensor(self, path_list: List[str])->torch.Tensor:
