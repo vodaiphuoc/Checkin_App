@@ -218,6 +218,8 @@ class FineTuner(object):
 		self.device = device
 		self.batch_size = batch_size
 		self.return_examples = return_examples
+
+		self.master_batch_size = self.batch_size*self.return_examples
 		self.loss_fn = torch.nn.TripletMarginLoss(margin=1.0, 
 												p=2.0, 
 												eps=1e-06, 
@@ -254,9 +256,7 @@ class FineTuner(object):
 		)
 
 	def _pre_process_batch_data(self, batch: torch.Tensor)->torch.Tensor:
-		return batch.reshape((self.return_examples*self.batch_size, 
-								3, 160, 160)
-							).to(self.device)
+		return batch.reshape((self.master_batch_size, 3, 160, 160)).to(self.device)
 
 	def train(self, save_path:str):
 		"""Main training function"""
@@ -277,9 +277,9 @@ class FineTuner(object):
 
 				embeddings = self.model(torch.cat([a_batch, p_batch, n_batch], dim = 0))
 
-				a_embeddings = embeddings[0: self.batch_size,:]
-				p_embeddings = embeddings[self.batch_size: 2*self.batch_size,:]
-				n_embeddings = embeddings[2*self.batch_size:,:]
+				a_embeddings = embeddings[0: self.master_batch_size,:]
+				p_embeddings = embeddings[self.master_batch_size: 2*self.master_batch_size,:]
+				n_embeddings = embeddings[2*self.master_batch_size:,:]
 
 				loss = self.loss_fn(a_embeddings, p_embeddings, n_embeddings)
 
@@ -306,7 +306,7 @@ class FineTuner(object):
 						embeddings = self.model(torch.cat([val_a_batch, val_p_batch, val_n_path], 
 												dim = 0))
 
-						a_embeddings = embeddings[0: self.batch_size,:]
+						a_embeddings = embeddings[0: self.batch_size*self.return_examples,:]
 						p_embeddings = embeddings[self.batch_size: 2*self.batch_size,:]
 						n_embeddings = embeddings[2*self.batch_size:,:]
 
