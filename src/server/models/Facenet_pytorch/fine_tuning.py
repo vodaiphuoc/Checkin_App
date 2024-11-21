@@ -15,10 +15,8 @@ class TripLetDataset(torch.utils.data.Dataset):
 	For validation set, collected users are combined with 100 celeb users
 	"""
 	def __init__(self, 
-				return_examples = 512,
 				is_train = True,
-				offload = False,
-				shard_length = 2000,
+				return_examples = 512,
 				data_folder_path = 'face_dataset\\faces_only', 
 				ratio_other_user = 0.2,
 				number_celeb_in_train = 500,
@@ -30,8 +28,6 @@ class TripLetDataset(torch.utils.data.Dataset):
 			self.userIdx2other_usersIdx, 
 			self.user2img_path
 		) = TripLetDataset._make_index_list(is_train = is_train,
-											offload = offload,
-											shard_length = shard_length,
 											data_folder_path = data_folder_path, 
 											ratio_other_user = ratio_other_user,
 											number_celeb_in_train = number_celeb_in_train,
@@ -46,14 +42,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 		return None
 
 	@staticmethod
-	def _offload_user_folders(usr_folder_list: List[str])->None:
-		with open('usr_folder_list.json','w') as f:
-			json.dump([{k:v} for k, v in enumerate(usr_folder_list)],f, indent = 5)
-
-	@staticmethod
 	def _make_index_list(is_train: bool,
-						offload:bool,
-						shard_length:int,
 						data_folder_path: str,
 						ratio_other_user: float,
 						number_celeb_in_train: int = 500,
@@ -66,9 +55,6 @@ class TripLetDataset(torch.utils.data.Dataset):
 		else:
 			glob_iter = glob.glob(f"{data_folder_path}/*_*") + \
 						glob.glob(f"{data_folder_path}/[0-9]*")[:number_celeb_in_val]
-
-		if offload:
-			TripLetDataset._offload_user_folders(glob_iter)
 
 		number_other_user = int((len(glob_iter)-1)*ratio_other_user)
 		# user maps to other users
@@ -93,8 +79,12 @@ class TripLetDataset(torch.utils.data.Dataset):
 	def __len__(self):
 		return len(self.index_iter)
 
-
 	def _get_triplet_index(self, index_list: List[int])-> List[Dict[str,Any]]:
+		"""
+		Given a list of index (user folder dir)
+		return mapping from user anchor/positive files with 
+		negative files
+		"""
 		master_index = []
 		for user_dir_idx in index_list:
 			# get total images of current user
@@ -152,10 +142,18 @@ class TripLetDataset(torch.utils.data.Dataset):
 				else:
 					n_path.append(self.glob_iter[k]+'/'+v)
 
+		assert len(a_path) == len(p_path) and \
+				len(a_path) == len(n_path) and \
+				len(a_path) == self.return_examples, \
+			f"Found {len(a_path)}, {len(p_path)}, {len(n_path)}"
+
 		anchors = self._paths2tensor(a_path)
 		positives = self._paths2tensor(p_path)
 		negatives = self._paths2tensor(n_path)
 
+		assert anchors.shape[0] == self.return_examples, f"Found {anchors.shape[0]}"
+		assert positives.shape[0] == self.return_examples, f"Found {positives.shape[0]}"
+		assert negatives.shape[0] == self.return_examples, f"Found {negatives.shape[0]}"
 		return anchors, positives, negatives
 
 class FineTuner(object):
@@ -165,24 +163,34 @@ class FineTuner(object):
 				num_epochs:int,
 				gradient_accumulate_steps: int,
 				lr: float,
-				data_folder_path:str,
-				ratio_other_user:float,
-				pretrained_weight_dir: str,
-				batch_size: int,
-				num_workers:int,
-				device: torch.device
+				device: torch.device,
+				pretrained_weight_dir: str = 'src\\server\\models\\pretrained_weights\\Facenet_pytorch',
+				return_examples:int = 512,
+				data_folder_path:str = 'face_dataset/faces_only',
+				ratio_other_user:float = 0.2,
+				number_celeb_in_train:int = 500,
+				number_celeb_in_val:int = 150,
+				batch_size:int = 64,
+				num_workers:int = 2
 				):
 		
-		self.train_loader = FineTuner._make_loaders(is_train = True,
-													data_folder_path = data_folder_path, 
-													ratio_other_user = ratio_other_user,
-													batch_size = batch_size,
-													num_workers = num_workers)
-		self.val_loader = FineTuner._make_loaders(is_train = False,
-													data_folder_path = data_folder_path, 
-													ratio_other_user = ratio_other_user,
-													batch_size = batch_size,
-													num_workers = num_workers)
+		self.train_loader = FineTuner._make_loaders(True,
+													return_examples,
+													data_folder_path, 
+													ratio_other_user,
+													number_celeb_in_train,
+													number_celeb_in_val,
+													batch_size, 
+													num_workers)
+		self.val_loader = FineTuner._make_loaders(False,
+													return_examples,
+													data_folder_path, 
+													ratio_other_user,
+													number_celeb_in_train,
+													number_celeb_in_val,
+													batch_size,
+													num_workers
+													)
 
 		self.model = InceptionResnetV1(pretrained = 'casia-webface', 
 									classify=False,
@@ -205,6 +213,7 @@ class FineTuner(object):
 		self.gradient_accumulate_steps = gradient_accumulate_steps
 		self.device = device
 		self.batch_size = batch_size
+		self.return_examples = return_examples
 		self.loss_fn = torch.nn.TripletMarginLoss(margin=1.0, 
 												p=2.0, 
 												eps=1e-06, 
@@ -213,20 +222,26 @@ class FineTuner(object):
 												reduce=None, 
 												reduction='mean')
 	@staticmethod
-	def _make_loaders(is_train: bool,
-					data_folder_path: str, 
-					ratio_other_user: str,
+	def _make_loaders(is_train:bool,
+					return_examples:int,
+					data_folder_path:str, 
+					ratio_other_user:float,
+					number_celeb_in_train:int,
+					number_celeb_in_val:int,
 					batch_size:int,
 					num_workers:int
 					):
-		dataset = TripLetDataset(is_train = True,
+		dataset = TripLetDataset(return_examples = return_examples,
+								is_train = is_train,
 								data_folder_path = data_folder_path, 
-								ratio_other_user = ratio_other_user
+								ratio_other_user = ratio_other_user,
+								number_celeb_in_train = number_celeb_in_train,
+								number_celeb_in_val = number_celeb_in_val
 		)
 		
 		return torch.utils.data.DataLoader(dataset, 
 										batch_size= batch_size, 
-										shuffle=True if is_train else False, 
+										shuffle=False if is_train else False, 
 										num_workers=num_workers,
 										pin_memory=True, 
 										drop_last=True if is_train else False,
@@ -234,16 +249,26 @@ class FineTuner(object):
 										persistent_workers=True
 		)
 
+	def _pre_process_batch_data(self, batch: torch.Tensor)->torch.Tensor:
+		return batch.reshape((self.return_examples*self.batch_size, 
+								3, 160, 160)
+							).to(self.device)
+
 	def train(self, save_path:str):
+		"""Main training function"""
 		train_logs = {}
 		val_logs = {}
 		for epoch in range(self.num_epochs):
-
+			print(f'Current epoch: {epoch}')
 			mean_train_loss = 0
 			for batch_idx, (a_batch, p_batch, n_batch) in enumerate(self.train_loader):
-				a_batch = a_batch.to(self.device)  
-				p_batch = p_batch.to(self.device)
-				n_batch = n_batch.to(self.device)
+				assert a_batch.shape[0] == self.batch_size, f"Found {a_batch.shape[0]}"
+				assert a_batch.shape[1] == self.return_examples, f"Found {a_batch.shape}, {batch_idx}"
+				assert a_batch.shape[2] == 3, f"Found {a_batch.shape[2]}"
+
+				a_batch = self._pre_process_batch_data(a_batch)
+				p_batch = self._pre_process_batch_data(p_batch)
+				n_batch = self._pre_process_batch_data(n_batch)
 
 				embeddings = self.model(torch.cat([a_batch, p_batch, n_path], dim = 0))
 
@@ -268,12 +293,13 @@ class FineTuner(object):
 			if self.num_epochs//epoch == 2 or epoch == self.num_epochs -1:
 				mean_val_loss = 0
 				with torch.no_grad():
-					for batch_idx, (a_batch, p_batch, n_batch) in enumerate(self.val_loader):
-						a_batch = a_batch.to(self.device)  
-						p_batch = p_batch.to(self.device)
-						n_batch = n_batch.to(self.device)
+					for batch_idx, (val_a_batch, val_p_batch, val_n_batch) in enumerate(self.val_loader):
+						val_a_batch = self._pre_process_batch_data(val_a_batch)
+						val_p_batch = self._pre_process_batch_data(val_p_batch)
+						val_n_batch = self._pre_process_batch_data(val_n_batch)
 
-						embeddings = self.model(torch.cat([a_batch, p_batch, n_path], dim = 0))
+						embeddings = self.model(torch.cat([val_a_batch, val_p_batch, val_n_path], 
+												dim = 0))
 
 						a_embeddings = embeddings[0: self.batch_size,:]
 						p_embeddings = embeddings[self.batch_size: 2*self.batch_size,:]
