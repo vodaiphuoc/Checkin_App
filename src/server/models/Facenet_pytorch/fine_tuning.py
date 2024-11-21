@@ -269,6 +269,7 @@ class FineTuner(object):
 			print(f'Current epoch: {epoch}')
 			mean_train_loss = 0
 			for batch_idx, (a_batch, p_batch, n_batch) in enumerate(self.train_loader):
+				print('batch idx: ', batch_idx)
 				assert a_batch.shape[0] == self.batch_size, f"Found {a_batch.shape[0]}"
 				assert a_batch.shape[1] == self.return_examples, f"Found {a_batch.shape}, {batch_idx}"
 				assert a_batch.shape[2] == 3, f"Found {a_batch.shape[2]}"
@@ -277,7 +278,7 @@ class FineTuner(object):
 				p_batch = self._pre_process_batch_data(p_batch)
 				n_batch = self._pre_process_batch_data(n_batch)
 
-				embeddings = self.model(torch.cat([a_batch, p_batch, n_path], dim = 0))
+				embeddings = self.model(torch.cat([a_batch, p_batch, n_batch], dim = 0))
 
 				a_embeddings = embeddings[0: self.batch_size,:]
 				p_embeddings = embeddings[self.batch_size: 2*self.batch_size,:]
