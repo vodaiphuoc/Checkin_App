@@ -113,6 +113,8 @@ class TripLetDataset(torch.utils.data.Dataset):
 							]
 			
 			master_index.extend(product_list)
+			if len(master_index) > self.return_examples:
+				break
 
 		print('Length master index: ',len(master_index))
 		return master_index[: self.return_examples]
