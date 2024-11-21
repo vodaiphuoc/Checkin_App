@@ -93,8 +93,8 @@ class TripLetDataset(torch.utils.data.Dataset):
 			anchor_imgs_path = self.user2img_path[user_dir_idx]
 			positives = [
 							{user_dir_idx:file_name_pair}
-							for file_name_pair in random.sample(itertools.combinations(anchor_imgs_path,2),
-																k = len(anchor_imgs_path))
+							for file_name_pair \
+							in itertools.combinations(anchor_imgs_path,2)
 						]
 			
 			neg_img_list = []
@@ -106,7 +106,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 											{other_user_idx: img_file_name} 
 											for img_file_name in 
 											random.sample(self.user2img_path[other_user_idx], 
-															k = len(self.user2img_path[other_user_idx])//8)
+															k = len(self.user2img_path[other_user_idx])//7)
 										])
 					
 			# merge dict from itertool.product
@@ -139,7 +139,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 		list_ids = self.index_iter[index]
 		triplet_idx = self._get_triplet_index(list_ids)
 
-		assert len(triplet_idx) == self.return_examples
+		assert len(triplet_idx) == self.return_examples, f"Found {len(triplet_idx)}"
 
 		a_path, p_path, n_path = [], [], []
 		for map_dict in triplet_idx:
