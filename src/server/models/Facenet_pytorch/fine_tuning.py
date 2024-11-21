@@ -33,7 +33,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 											number_celeb_in_train = number_celeb_in_train,
 											number_celeb_in_val = number_celeb_in_val
 											)
-
+		self.data_folder_path = data_folder_path
 		self.return_examples = return_examples
 
 		self.index_iter = [list(range(user_dir_idx, user_dir_idx + 3)) 
@@ -50,11 +50,12 @@ class TripLetDataset(torch.utils.data.Dataset):
 						)->None:
 		# user folders
 		if is_train:
-			glob_iter = glob.glob(f"{data_folder_path}/*_*") + \
-						random.sample(glob.glob(f"{data_folder_path}/[0-9]*"), k = number_celeb_in_train)
+			glob_iter = glob.glob("*_*",root_dir = f"{data_folder_path}") + \
+						random.sample(glob.glob("[0-9]*", root_dir = f"{data_folder_path}"), 
+									k = number_celeb_in_train)
 		else:
-			glob_iter = glob.glob(f"{data_folder_path}/*_*") + \
-						glob.glob(f"{data_folder_path}/[0-9]*")[:number_celeb_in_val]
+			glob_iter = glob.glob("*_*",root_dir = f"{data_folder_path}") + \
+						glob.glob("[0-9]*", root_dir = f"{data_folder_path}")[:number_celeb_in_val]
 
 		number_other_user = int((len(glob_iter)-1)*ratio_other_user)
 		# user maps to other users
@@ -144,10 +145,10 @@ class TripLetDataset(torch.utils.data.Dataset):
 			full_paths = []
 			for k, v in map_dict.items():
 				if isinstance(v,tuple):
-					a_path.append(self.glob_iter[k]+'/'+v[0])
-					p_path.append(self.glob_iter[k]+'/'+v[1])
+					a_path.append(self.data_folder_path+'/'+ self.glob_iter[k]+'/'+v[0])
+					p_path.append(self.data_folder_path+'/'+ self.glob_iter[k]+'/'+v[1])
 				else:
-					n_path.append(self.glob_iter[k]+'/'+v)
+					n_path.append(self.data_folder_path+'/'+ self.glob_iter[k]+'/'+v)
 
 		assert len(a_path) == len(p_path) and \
 				len(a_path) == len(n_path) and \
