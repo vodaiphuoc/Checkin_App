@@ -100,7 +100,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 										{other_user_idx: img_file_name} 
 										for img_file_name in self.user2img_path[other_user_idx]
 									])
-				if len(neg_img_list) > self.return_examples//len(positives) + 1:
+				if len(neg_img_list) > self.return_examples//(len(positives)*len(index_list)) + 1:
 					break
 
 			# merge dict from itertool.product
