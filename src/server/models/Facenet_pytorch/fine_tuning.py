@@ -96,14 +96,16 @@ class TripLetDataset(torch.utils.data.Dataset):
 			
 			neg_img_list = []
 			for other_user_idx in self.userIdx2other_usersIdx[user_dir_idx]:
-				neg_img_list.extend([
-										{other_user_idx: img_file_name} 
-										for img_file_name in 
-										random.sample(self.user2img_path[other_user_idx], 
-														k = len(self.user2img_path[other_user_idx])//5)
-									])
-				if len(neg_img_list) > int(len(positives)*0.4):
+				if len(neg_img_list) > int(len(positives)*0.3):
 					break
+				else:
+					neg_img_list.extend([
+											{other_user_idx: img_file_name} 
+											for img_file_name in 
+											random.sample(self.user2img_path[other_user_idx], 
+															k = len(self.user2img_path[other_user_idx])//7)
+										])
+					
 
 			# merge dict from itertool.product
 			product_list = [ k_ap|k_n for (k_ap, k_n) in
