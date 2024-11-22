@@ -194,13 +194,16 @@ class FineTuner(object):
 									device = device,
 									pretrained_weight_dir = pretrained_weight_dir)
 
-		for name, module in self.model.named_modules():
-			if name not in self.freeze_list:
-				for param in module.parameters():
-					param.requires_grad = False
-			else:
-				for param in module.parameters():
-					param.requires_grad = True
+		for param in module.parameters():
+			param.requires_grad = True
+
+		# for name, module in self.model.named_modules():
+		# 	if name not in self.freeze_list:
+		# 		for param in module.parameters():
+		# 			param.requires_grad = False
+		# 	else:
+		# 		for param in module.parameters():
+		# 			param.requires_grad = True
 
 		self.optimizer = torch.optim.Adam(self.model.parameters(),lr = lr)
 		
@@ -218,7 +221,7 @@ class FineTuner(object):
 		
 
 		self.master_batch_size = self.batch_size*self.return_examples
-		self.loss_fn = torch.nn.TripletMarginLoss(margin=1.0, 
+		self.loss_fn = torch.nn.TripletMarginLoss(margin = 0.7, 
 												p=2.0, 
 												eps=1e-06, 
 												swap=False, 
