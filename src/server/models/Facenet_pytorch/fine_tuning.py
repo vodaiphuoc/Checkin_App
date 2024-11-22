@@ -168,7 +168,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 
 class FineTuner(object):
 
-	freeze_list = ['mixed_6a','repeat_2','mixed_7a','repeat_3', 
+	freeze_list = ['conv2d_4a', 'conv2d_4b', 'repeat_1','mixed_6a','repeat_2','mixed_7a','repeat_3', 
 					'block8', 'avgpool_1a', 'last_linear', 'last_bn'
 					]
 
@@ -194,16 +194,13 @@ class FineTuner(object):
 									device = device,
 									pretrained_weight_dir = pretrained_weight_dir)
 
-		for param in self.model.parameters():
-			param.requires_grad = True
-
-		# for name, module in self.model.named_modules():
-		# 	if name not in self.freeze_list:
-		# 		for param in module.parameters():
-		# 			param.requires_grad = False
-		# 	else:
-		# 		for param in module.parameters():
-		# 			param.requires_grad = True
+		for name, module in self.model.named_modules():
+			if name not in self.freeze_list:
+				for param in module.parameters():
+					param.requires_grad = False
+			else:
+				for param in module.parameters():
+					param.requires_grad = True
 
 		self.optimizer = torch.optim.Adam(self.model.parameters(),lr = lr)
 		
