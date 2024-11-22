@@ -208,7 +208,7 @@ class FineTuner(object):
 		self.data_folder_path = data_folder_path
 		self.batch_size = batch_size
 		self.return_examples = return_examples
-		self.ratio_other_user = ratio_other_user,
+		self.ratio_other_user = ratio_other_user
 		self.number_celeb_in_train = number_celeb_in_train
 		self.number_celeb_in_val = number_celeb_in_val
 		self.num_workers = num_workers
@@ -259,18 +259,17 @@ class FineTuner(object):
 		val_logs = {}
 		for epoch in range(1,self.num_epochs+1):
 			mean_train_loss = 0
+			train_loader = FineTuner._make_loaders(True,
+													self.return_examples,
+													self.data_folder_path, 
+													self.ratio_other_user,
+													self.number_celeb_in_train,
+													self.number_celeb_in_val,
+													self.batch_size,
+													self.num_workers)
 
-			self.train_loader = FineTuner._make_loaders(True,
-														self.return_examples,
-														self.data_folder_path, 
-														self.ratio_other_user,
-														self.number_celeb_in_train,
-														self.number_celeb_in_val,
-														self.batch_size, 
-														self.num_workers)
-
-			for batch_idx, (a_batch, p_batch, n_batch) in tqdm(enumerate(self.train_loader),
-																total = self.num_epochs):
+			for batch_idx, (a_batch, p_batch, n_batch) in tqdm(enumerate(train_loader),
+																total = len(train_loader)):
 				
 				# assert a_batch.shape[0] == self.batch_size, f"Found {a_batch.shape[0]}"
 				# assert a_batch.shape[1] == self.return_examples, f"Found {a_batch.shape}, {batch_idx}"
@@ -303,18 +302,18 @@ class FineTuner(object):
 			if self.num_epochs//epoch == 2 or epoch == self.num_epochs:
 				mean_val_loss = 0
 
-				self.val_loader = FineTuner._make_loaders(False,
-														self.return_examples,
-														self.data_folder_path, 
-														self.ratio_other_user,
-														self.number_celeb_in_train,
-														self.number_celeb_in_val,
-														self.batch_size,
-														self.num_workers
-														)
+				val_loader = FineTuner._make_loaders(False,
+													self.return_examples,
+													self.data_folder_path, 
+													self.ratio_other_user,
+													self.number_celeb_in_train,
+													self.number_celeb_in_val,
+													self.batch_size,
+													self.num_workers
+													)
 
 				with torch.no_grad():
-					for batch_idx, (val_a_batch, val_p_batch, val_n_batch) in enumerate(self.val_loader):
+					for batch_idx, (val_a_batch, val_p_batch, val_n_batch) in enumerate(val_loader):
 						val_a_batch = self._pre_process_batch_data(val_a_batch)
 						val_p_batch = self._pre_process_batch_data(val_p_batch)
 						val_n_batch = self._pre_process_batch_data(val_n_batch)
