@@ -194,7 +194,7 @@ class FineTuner(object):
 									device = device,
 									pretrained_weight_dir = pretrained_weight_dir)
 
-		for param in module.parameters():
+		for param in self.model.parameters():
 			param.requires_grad = True
 
 		# for name, module in self.model.named_modules():
