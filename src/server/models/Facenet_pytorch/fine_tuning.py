@@ -167,7 +167,10 @@ class TripLetDataset(torch.utils.data.Dataset):
 		return anchors, positives, negatives
 
 class FineTuner(object):
-	freeze_list = ['mixed_7a','repeat_3', 'block8', 'avgpool_1a', 'last_linear', 'last_bn']
+
+	freeze_list = ['mixed_6a','repeat_2','mixed_7a','repeat_3', 
+					'block8', 'avgpool_1a', 'last_linear', 'last_bn'
+					]
 
 	def __init__(self, 
 				num_epochs:int,
@@ -191,8 +194,6 @@ class FineTuner(object):
 									device = device,
 									pretrained_weight_dir = pretrained_weight_dir)
 
-		self.optimizer = torch.optim.Adam(self.model.parameters(),lr = lr)
-
 		for name, module in self.model.named_modules():
 			if name not in self.freeze_list:
 				for param in module.parameters():
@@ -200,6 +201,8 @@ class FineTuner(object):
 			else:
 				for param in module.parameters():
 					param.requires_grad = True
+
+		self.optimizer = torch.optim.Adam(self.model.parameters(),lr = lr)
 		
 		self.num_epochs = num_epochs
 		self.gradient_accumulate_steps = gradient_accumulate_steps
