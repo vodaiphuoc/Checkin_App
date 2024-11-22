@@ -256,7 +256,7 @@ class FineTuner(object):
 										shuffle=False if is_train else False, 
 										num_workers=num_workers,
 										pin_memory=True, 
-										drop_last=True if is_train else False,
+										drop_last=True,
 										prefetch_factor=2,
 										persistent_workers=True
 		)
