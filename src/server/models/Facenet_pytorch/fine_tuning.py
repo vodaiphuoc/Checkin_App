@@ -25,7 +25,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 
 		(
 			self.glob_iter,
-			self.userIdx2other_usersIdx, 
+			self.userIdx2other_usersIdx,
 			self.user2img_path
 		) = TripLetDataset._make_index_list(is_train = is_train,
 											data_folder_path = data_folder_path, 
@@ -184,24 +184,6 @@ class FineTuner(object):
 				num_workers:int = 2
 				):
 		
-		self.train_loader = FineTuner._make_loaders(True,
-													return_examples,
-													data_folder_path, 
-													ratio_other_user,
-													number_celeb_in_train,
-													number_celeb_in_val,
-													batch_size, 
-													num_workers)
-		self.val_loader = FineTuner._make_loaders(False,
-													return_examples,
-													data_folder_path, 
-													ratio_other_user,
-													number_celeb_in_train,
-													number_celeb_in_val,
-													batch_size,
-													num_workers
-													)
-
 		self.model = InceptionResnetV1(pretrained = 'casia-webface', 
 									classify=False,
 									num_classes=None, 
@@ -222,8 +204,15 @@ class FineTuner(object):
 		self.num_epochs = num_epochs
 		self.gradient_accumulate_steps = gradient_accumulate_steps
 		self.device = device
+
+		self.data_folder_path = data_folder_path
 		self.batch_size = batch_size
 		self.return_examples = return_examples
+		self.ratio_other_user = ratio_other_user,
+		self.number_celeb_in_train = number_celeb_in_train
+		self.number_celeb_in_val = number_celeb_in_val
+		self.num_workers = num_workers
+		
 
 		self.master_batch_size = self.batch_size*self.return_examples
 		self.loss_fn = torch.nn.TripletMarginLoss(margin=1.0, 
@@ -270,6 +259,16 @@ class FineTuner(object):
 		val_logs = {}
 		for epoch in range(1,self.num_epochs+1):
 			mean_train_loss = 0
+
+			self.train_loader = FineTuner._make_loaders(True,
+														self.return_examples,
+														self.data_folder_path, 
+														self.ratio_other_user,
+														self.number_celeb_in_train,
+														self.number_celeb_in_val,
+														self.batch_size, 
+														self.num_workers)
+
 			for batch_idx, (a_batch, p_batch, n_batch) in tqdm(enumerate(self.train_loader),
 																total = self.num_epochs):
 				
@@ -299,10 +298,21 @@ class FineTuner(object):
 					self.optimizer.zero_grad()
 
 			mean_train_loss = mean_train_loss/len(self.train_loader)
-			train_logs[epoch] = mean_train_loss.clone().detach().cpu().numpy()
+			train_logs[epoch] = mean_train_loss.clone().detach().cpu().item()
 
 			if self.num_epochs//epoch == 2 or epoch == self.num_epochs:
 				mean_val_loss = 0
+
+				self.val_loader = FineTuner._make_loaders(False,
+														self.return_examples,
+														self.data_folder_path, 
+														self.ratio_other_user,
+														self.number_celeb_in_train,
+														self.number_celeb_in_val,
+														self.batch_size,
+														self.num_workers
+														)
+
 				with torch.no_grad():
 					for batch_idx, (val_a_batch, val_p_batch, val_n_batch) in enumerate(self.val_loader):
 						val_a_batch = self._pre_process_batch_data(val_a_batch)
@@ -319,7 +329,7 @@ class FineTuner(object):
 						mean_val_loss += self.loss_fn(a_embeddings, p_embeddings, n_embeddings)
 
 				mean_val_loss = mean_val_loss/len(self.val_loader)
-				val_logs[epoch] = mean_val_loss.clone().detach().cpu().numpy()
+				val_logs[epoch] = mean_val_loss.clone().detach().cpu().item()
 
 		print(train_logs)
 		print(val_logs)
