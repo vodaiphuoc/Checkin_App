@@ -327,7 +327,7 @@ def load_weights(mdl, name, pretrained_weight_dir, device):
         _path = pretrained_weight_dir+"/20180408-102900-casia-webface.pt"
         # path = 'https://github.com/timesler/facenet-pytorch/releases/download/v2.2.9/20180408-102900-casia-webface.pt'
     elif name == 'fine_tuning':
-        _path = pretrained_weight_dir+"/fine_tuning"
+        _path = pretrained_weight_dir+"/fine_tuning.pt"
     else:
         raise ValueError('Pretrained models only exist for "vggface2" and "casia-webface"')
 
