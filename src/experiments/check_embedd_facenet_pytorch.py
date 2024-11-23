@@ -28,27 +28,27 @@ import os
 
 class Test_Embeddings(object):
 	def __init__(self,
-				data_folder_path: str, 
-				pretrained_weight_dir: str,
-				model_string: Literal['casia-webface','fine_tuning'],
+		data_folder_path: str, 
+		pretrained_weight_dir: str,
+		model_string: Literal['casia-webface','fine_tuning'],
 				# p_state_dict_path: str,
                 # r_state_dict_path: str,
                 # o_state_dict_path: str,
 				):
 		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 		self.recognition_model = InceptionResnetV1(pretrained = model_string, 
-			    									classify=False, 
-			    									num_classes=None, 
-			    									dropout_prob=0.6,
-			    									device=self.device,
-			    									pretrained_weight_dir = pretrained_weight_dir
+							classify=False, 
+							num_classes=None, 
+							dropout_prob=0.6,
+							device=self.device,
+							pretrained_weight_dir = pretrained_weight_dir
 	    									)
 		self.data_folder_path = data_folder_path
 
 	def _run_single_user(self, 
-						user_name:str, 
-						return_embedding_only: bool = False
-						):
+				user_name:str, 
+				return_embedding_only: bool = False
+				):
 		user_imgs = []
 		for path in glob.glob(f"{self.data_folder_path}/{user_name}/*"):
 			image = cv.imread(path)
@@ -93,19 +93,19 @@ class Test_Embeddings(object):
 			master_init_data = self._get_total_init_user_data()
 			print('number init data: ',len(master_init_data))
 			db_engine = Mongo_Handler(master_config= master_config,
-									ini_push= True,
-									init_data= master_init_data)
+						ini_push= True,
+						init_data= master_init_data)
 			
 
 		if evaluation:
 			db_engine = Mongo_Handler(master_config= master_config,
-									ini_push= False)
+						ini_push= False)
 			
 			result = {}
 			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
 				user_name = os.path.split(main_user_dir)[-1].split('.')[0]
 				embeddings = self._run_single_user(user_name = user_name, 
-													return_embedding_only = True)
+								return_embedding_only = True)
 
 				num_embeddings = embeddings.shape[0]
 				step = int(num_embeddings)//3

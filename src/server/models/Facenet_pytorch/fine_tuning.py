@@ -103,10 +103,10 @@ class TripLetDataset(torch.utils.data.Dataset):
 				break
 			else:
 				neg_img_list.extend([
-										{other_user_idx: img_file_name} 
-										for img_file_name in 
-										random.sample(self.user2img_path[other_user_idx], 
-														k = len(self.user2img_path[other_user_idx])//5)
+									{other_user_idx: img_file_name} 
+									for img_file_name in 
+									random.sample(self.user2img_path[other_user_idx], 
+													k = len(self.user2img_path[other_user_idx])//5)
 									])
 		
 		# merge dict from itertool.product

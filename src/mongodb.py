@@ -219,10 +219,10 @@ class Mongo_Handler(object):
         
         # print('batch_results: ',batch_results)
         # ranking
-        candidate_users = {ele[0]:[] for round in batch_results for ele in round}
+        candidate_users = {ele[0]:[] for _round in batch_results for ele in _round}
         
         for batch in batch_results:
-            for user, rank,_ in batch:
+            for user, rank, _ in batch:
                 candidate_users[user].append(rank)
         
         # mean ranking
