@@ -1,7 +1,7 @@
 from src.server.models.Facenet_pytorch.fine_tuning import FineTuner
 from src.experiments.check_embedd_facenet_pytorch import Test_Embeddings
 import torch
-
+import torch.multiprocessing as mp
 
 if __name__ == '__main__':
 	
@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     WORLD_SIZE = torch.cuda.device_count()
     mp.spawn(trainer.training_loop,
-        args=(WORLD_SIZE),
+        args=(WORLD_SIZE,),
         nprocs=WORLD_SIZE,
         join=True)
 

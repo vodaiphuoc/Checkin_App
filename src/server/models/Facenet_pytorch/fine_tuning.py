@@ -12,7 +12,6 @@ from src.server.models.Facenet_pytorch.utils.fine_tuning_utils import TripLetDat
 from src.server.models.Facenet_pytorch.inception_resnet_v1 import InceptionResnetV1
 
 import torch.distributed as dist
-import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
@@ -25,7 +24,7 @@ from torch.distributed.fsdp.wrap import (
     enable_wrap,
     wrap,
 )
-
+import os
 
 def setup(rank:int, world_size:int):
     os.environ['MASTER_ADDR'] = 'localhost'
