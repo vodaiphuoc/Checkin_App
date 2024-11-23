@@ -3,7 +3,7 @@ from src.server.models.Facenet_pytorch.inception_resnet_v1 import InceptionResne
 from src.mongodb import Mongo_Handler
 from src.utils import get_program_config
 import cv2 as cv
-from typing import List
+from typing import List, Literal
 import numpy as np
 import glob
 import torch
@@ -16,9 +16,10 @@ class Test_Embeddings(object):
 	def __init__(self,
 				data_folder_path: str, 
 				pretrained_weight_dir: str,
-				p_state_dict_path: str,
-                r_state_dict_path: str,
-                o_state_dict_path: str,
+				model_string: Literal['casia-webface','fine_tuning'],
+				# p_state_dict_path: str,
+                # r_state_dict_path: str,
+                # o_state_dict_path: str,
 				):
 		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 		# self.detector = MTCNN(image_size=160, 
@@ -54,23 +55,6 @@ class Test_Embeddings(object):
 			assert image is not None, f"{path}"
 			image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
 			user_imgs.append(image)
-
-		# infernce in batch
-		# faces, probs = self.detector(img = user_imgs,
-		# 							save_path = None,
-		# 							return_prob= True)
-
-		# assert len(faces) == len(user_imgs)
-		# assert len(faces) == len(probs)
-		
-		# filtered_faces = []
-		# for each_face, each_prob in zip(faces, probs):
-		# 	if each_prob[0] is None:
-		# 		continue
-		# 	else:
-		# 		if each_prob[0] > 0.8:
-		# 			filtered_faces.append(each_face[0])
-		# assert len(filtered_faces) != 0
 		
 		stack_faces = torch.tensor(np.stack(user_imgs)).permute(0,3,1,2)
 		assert stack_faces.shape[0] == len(user_imgs) and stack_faces.shape[1] == 3

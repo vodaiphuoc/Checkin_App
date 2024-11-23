@@ -217,7 +217,7 @@ class InceptionResnetV1(nn.Module):
 
         if pretrained == 'vggface2':
             tmp_classes = 8631
-        elif pretrained == 'casia-webface':
+        elif pretrained == 'casia-webface' or pretrained == 'fine_tuning':
             tmp_classes = 10575
         elif pretrained is None and self.classify and self.num_classes is None:
             raise Exception('If "pretrained" is not specified and "classify" is True, "num_classes" must be specified')
@@ -267,7 +267,7 @@ class InceptionResnetV1(nn.Module):
 
         if pretrained is not None:
             self.logits = nn.Linear(512, tmp_classes)
-            load_weights(self, pretrained, self.pretrained_weight_dir)
+            load_weights(self, pretrained, self.pretrained_weight_dir, device)
 
         if self.classify and self.num_classes is not None:
             self.logits = nn.Linear(512, self.num_classes)
@@ -310,7 +310,7 @@ class InceptionResnetV1(nn.Module):
         return x
 
 
-def load_weights(mdl, name, pretrained_weight_dir):
+def load_weights(mdl, name, pretrained_weight_dir, device):
     """Download pretrained state_dict and load into model.
 
     Arguments:
@@ -326,6 +326,8 @@ def load_weights(mdl, name, pretrained_weight_dir):
     elif name == 'casia-webface':
         _path = pretrained_weight_dir+"/20180408-102900-casia-webface.pt"
         # path = 'https://github.com/timesler/facenet-pytorch/releases/download/v2.2.9/20180408-102900-casia-webface.pt'
+    elif name == 'fine_tune':
+        _path = pretrained_weight_dir+"/fine_tuning"
     else:
         raise ValueError('Pretrained models only exist for "vggface2" and "casia-webface"')
 
@@ -336,7 +338,7 @@ def load_weights(mdl, name, pretrained_weight_dir):
     # if not os.path.exists(cached_file):
     #     download_url_to_file(path, cached_file)
 
-    state_dict = torch.load(_path, weights_only = True)
+    state_dict = torch.load(_path, weights_only = True, map_location = device)
     mdl.load_state_dict(state_dict)
 
 def get_torch_home():
