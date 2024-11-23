@@ -58,7 +58,7 @@ class FineTuner(object):
 				batch_size:int = 64,
 				num_workers:int = 2
 				):
-
+		print(rank)
 		self.num_epochs = num_epochs
 		self.gradient_accumulate_steps = gradient_accumulate_steps
 		self.lr = lr
