@@ -36,7 +36,7 @@ class Test_Embeddings(object):
         #             r_state_dict_path = r_state_dict_path,
         #             o_state_dict_path = o_state_dict_path,
         #             )
-		self.recognition_model = InceptionResnetV1(pretrained = 'casia-webface', 
+		self.recognition_model = InceptionResnetV1(pretrained = model_string, 
 			    									classify=False, 
 			    									num_classes=None, 
 			    									dropout_prob=0.6,
