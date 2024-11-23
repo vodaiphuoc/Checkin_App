@@ -335,7 +335,7 @@ class FineTuner(object):
 				mean_val_loss = mean_val_loss/len(val_loader)
 				val_logs[epoch] = mean_val_loss
 
-			scheduler.step()
+			self.scheduler.step()
 
 		print(train_logs)
 		print(val_logs)
