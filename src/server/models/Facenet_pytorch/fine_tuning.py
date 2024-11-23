@@ -204,35 +204,35 @@ class FineTuner(object):
 		dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
 		return ddp_loss[0]/ddp_loss[1]
 
-	def training_loop( rank :int, 
-						world_size:int,
-						trainer_args: dict, 
-						save_path: str):
-		"""Main training function"""
-		setup(rank, world_size)
-		
-		trainer_args['rank'] = rank
-		trainer = FineTuner(**trainer_args)
+def training_loop( rank :int, 
+					world_size:int,
+					trainer_args: dict, 
+					save_path: str):
+	"""Main training function"""
+	setup(rank, world_size)
+	
+	trainer_args['rank'] = rank
+	trainer = FineTuner(**trainer_args)
 
-		train_logs = {}
-		val_logs = {}
+	train_logs = {}
+	val_logs = {}
 
-		for epoch in range(1,trainer.num_epochs+1):
-			train_logs[epoch] = trainer._train(rank, world_size)
+	for epoch in range(1,trainer.num_epochs+1):
+		train_logs[epoch] = trainer._train(rank, world_size)
 
-			if trainer.num_epochs//epoch == 2 or epoch == trainer.num_epochs:
-				val_logs[epoch] = trainer._eval(rank, world_size)
+		if trainer.num_epochs//epoch == 2 or epoch == trainer.num_epochs:
+			val_logs[epoch] = trainer._eval(rank, world_size)
 
-			scheduler.step()
+		scheduler.step()
 
-		if rank == 0:
-			print(train_logs)
-			print(val_logs)
+	if rank == 0:
+		print(train_logs)
+		print(val_logs)
 
-		dist.barrier()
-		state = trainer.model.state_dict()
-		# save checkpoints
-		if rank == 0:
-			torch.save(state, save_path)
+	dist.barrier()
+	state = trainer.model.state_dict()
+	# save checkpoints
+	if rank == 0:
+		torch.save(state, save_path)
 
-		cleanup()
+	cleanup()
