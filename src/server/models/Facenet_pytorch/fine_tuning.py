@@ -161,7 +161,7 @@ class FineTuner(object):
 		for batch_idx, (a_batch, p_batch, n_batch) in tqdm(enumerate(self.train_loader),
 															total = len(self.train_loader)):
 
-			model_inputs = self._pre_process_batch_data([a_batch, p_batch, n_batch])
+			model_inputs = self._pre_process_batch_data([a_batch, p_batch, n_batch], rank)
 			embeddings = self.model(model_inputs)
 
 			a_embeddings = embeddings[0: self.master_batch_size,:]
@@ -191,7 +191,7 @@ class FineTuner(object):
 
 		with torch.no_grad():
 			for batch_idx, (val_a_batch, val_p_batch, val_n_batch) in enumerate(self.val_loader):
-				val_model_inputs = self._pre_process_batch_data([val_a_batch, val_p_batch, val_n_batch])
+				val_model_inputs = self._pre_process_batch_data([val_a_batch, val_p_batch, val_n_batch], rank)
 
 				embeddings = self.model(val_model_inputs)
 
