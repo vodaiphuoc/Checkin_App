@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import MultiStepLR
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple, Any, Union
 import itertools
 import random
 from copy import deepcopy
@@ -95,7 +95,6 @@ class FineTuner(object):
 								number_celeb_in_train = number_celeb_in_train,
 								number_celeb_in_val = number_celeb_in_val
 		)
-
 		sampler = DistributedSampler(dataset, 
 									rank=rank, 
 									num_replicas=world_size, 
