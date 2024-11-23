@@ -59,7 +59,8 @@ class Test_Embeddings(object):
 		stack_faces = torch.tensor(np.stack(user_imgs)).permute(0,3,1,2)
 		assert stack_faces.shape[0] == len(user_imgs) and stack_faces.shape[1] == 3
 		stack_faces =fixed_image_standardization(stack_faces).to(self.device)
-		embeddings = self.recognition_model(stack_faces)
+		with torch.no_grad():
+			embeddings = self.recognition_model(stack_faces)
 		# assert embeddings.shape[0] == len(filtered_faces)
 		assert embeddings.shape[1] == 512
 
@@ -105,7 +106,7 @@ class Test_Embeddings(object):
 			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
 				user_name = os.path.split(main_user_dir)[-1].split('.')[0]
 				embeddings = self._run_single_user(user_name = user_name, 
-								return_embedding_only = True)
+													return_embedding_only = True)
 
 				num_embeddings = embeddings.shape[0]
 				step = int(num_embeddings)//3

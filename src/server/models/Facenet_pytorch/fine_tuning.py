@@ -222,7 +222,7 @@ class FineTuner(object):
 
 		self.master_batch_size = self.batch_size*self.return_examples
 
-		self.loss_fn = torch.nn.TripletMarginWithDistanceLoss(margin = 0.7, 
+		self.loss_fn = torch.nn.TripletMarginWithDistanceLoss(margin = 0.9, 
 							distance_function = lambda x, y: 1.0 - F.cosine_similarity(x, y),
 							swap=False,
 							reduction='mean')
