@@ -73,39 +73,39 @@ class FineTuner(object):
 			'batch_size': batch_size,
 			'num_workers': num_workers
 		}
+		
+		model = InceptionResnetV1(pretrained = 'casia-webface', 
+								classify=False,
+								num_classes=None, 
+								dropout_prob=0.6,
+								device = rank,
+								pretrained_weight_dir = pretrained_weight_dir)
 
-	model = InceptionResnetV1(pretrained = 'casia-webface', 
-							classify=False,
-							num_classes=None, 
-							dropout_prob=0.6,
-							device = rank,
-							pretrained_weight_dir = pretrained_weight_dir)
+		for name, module in model.named_modules():
+			if name not in self.freeze_list:
+				for param in module.parameters():
+					param.requires_grad = False
+			else:
+				for param in module.parameters():
+					param.requires_grad = True
 
-	for name, module in model.named_modules():
-		if name not in self.freeze_list:
-			for param in module.parameters():
-				param.requires_grad = False
-		else:
-			for param in module.parameters():
-				param.requires_grad = True
+		self.model = FSDP(model)
 
-	self.model = FSDP(model)
+		local_loader_args_dict = deepcopy(self.loader_args_dict)
+		local_loader_args_dict['rank'] = rank
+		local_loader_args_dict['world_size'] = world_size
 
-	local_loader_args_dict = deepcopy(self.loader_args_dict)
-	local_loader_args_dict['rank'] = rank
-	local_loader_args_dict['world_size'] = world_size
-
-	self.train_loader = FineTuner._make_loaders(is_train = True,**local_loader_args_dict)
-	self.val_loader = FineTuner._make_loaders(is_train = False,**local_loader_args_dict)
+		self.train_loader = FineTuner._make_loaders(is_train = True,**local_loader_args_dict)
+		self.val_loader = FineTuner._make_loaders(is_train = False,**local_loader_args_dict)
 
 
-	self.optimizer = torch.optim.Adam(self.model.parameters(),lr = self.lr)
-	scheduler = MultiStepLR(self.optimizer, milestones = [i*self.num_epochs//3 for i in range(1,3)])
+		self.optimizer = torch.optim.Adam(self.model.parameters(),lr = self.lr)
+		scheduler = MultiStepLR(self.optimizer, milestones = [i*self.num_epochs//3 for i in range(1,3)])
 
-	self.loss_fn = torch.nn.TripletMarginWithDistanceLoss(margin = 0.9, 
-						distance_function = lambda x, y: 1.0 - F.cosine_similarity(x, y),
-						swap=False,
-						reduction='mean')
+		self.loss_fn = torch.nn.TripletMarginWithDistanceLoss(margin = 0.9, 
+							distance_function = lambda x, y: 1.0 - F.cosine_similarity(x, y),
+							swap=False,
+							reduction='mean')
 
 	
 	@staticmethod
