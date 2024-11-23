@@ -46,6 +46,7 @@ class FineTuner(object):
 
 	def __init__(self, 
 				rank:int,
+				world_size:int,
 				num_epochs:int,
 				gradient_accumulate_steps: int,
 				lr: float,
@@ -212,6 +213,7 @@ def training_loop( rank :int,
 	setup(rank, world_size)
 	
 	trainer_args['rank'] = rank
+	trainer_args['world_size'] = world_size
 	trainer = FineTuner(**trainer_args)
 
 	train_logs = {}
