@@ -272,10 +272,10 @@ class InceptionResnetV1(nn.Module):
         if self.classify and self.num_classes is not None:
             self.logits = nn.Linear(512, self.num_classes)
 
-        self.device = torch.device('cpu')
         if device is not None:
             self.device = device
             self.to(device)
+
 
     def forward(self, x):
         """Calculate embeddings or logits given a batch of input image tensors.
@@ -337,8 +337,10 @@ def load_weights(mdl, name, pretrained_weight_dir, device):
     # cached_file = os.path.join(model_dir, os.path.basename(path))
     # if not os.path.exists(cached_file):
     #     download_url_to_file(path, cached_file)
-
-    state_dict = torch.load(_path, weights_only = True, map_location = device)
+    if isinstance(device, int):
+        state_dict = torch.load(_path, weights_only = True)
+    else:    
+        state_dict = torch.load(_path, weights_only = True)
     mdl.load_state_dict(state_dict)
 
 def get_torch_home():
