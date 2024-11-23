@@ -73,7 +73,7 @@ class FineTuner(object):
 			'batch_size': batch_size,
 			'num_workers': num_workers
 		}
-		
+
 		model = InceptionResnetV1(pretrained = 'casia-webface', 
 								classify=False,
 								num_classes=None, 
@@ -89,7 +89,7 @@ class FineTuner(object):
 				for param in module.parameters():
 					param.requires_grad = True
 
-		self.model = FSDP(model)
+		self.model = FSDP(model, use_orig_params = True)
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
 		local_loader_args_dict['rank'] = rank
