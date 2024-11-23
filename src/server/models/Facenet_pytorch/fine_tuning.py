@@ -1,4 +1,6 @@
 import torch
+import torch.nn.functional as F
+from torch.optim.lr_scheduler import MultiStepLR
 import glob
 from typing import List, Dict, Tuple, Any
 import itertools
@@ -203,6 +205,7 @@ class FineTuner(object):
 					param.requires_grad = True
 
 		self.optimizer = torch.optim.Adam(self.model.parameters(),lr = lr)
+		self.scheduler = MultiStepLR(self.optimizer, milestones = [i*num_epochs//3 for i in range(1,3)])
 		
 		self.num_epochs = num_epochs
 		self.gradient_accumulate_steps = gradient_accumulate_steps
@@ -218,13 +221,11 @@ class FineTuner(object):
 		
 
 		self.master_batch_size = self.batch_size*self.return_examples
-		self.loss_fn = torch.nn.TripletMarginLoss(margin = 0.7, 
-												p=2.0, 
-												eps=1e-06, 
-												swap=False, 
-												size_average=None, 
-												reduce=None, 
-												reduction='mean')
+
+		self.loss_fn = torch.nn.TripletMarginWithDistanceLoss(margin = 0.7, 
+							distance_function = lambda x, y: 1.0 - F.cosine_similarity(x, y),
+							swap=False,
+							reduction='mean')
 	@staticmethod
 	def _make_loaders(is_train:bool,
 					return_examples:int,
@@ -291,8 +292,9 @@ class FineTuner(object):
 				loss = self.loss_fn(a_embeddings, p_embeddings, n_embeddings)
 
 				loss = loss/self.gradient_accumulate_steps
+				loss.backward()
 
-				mean_train_loss += loss
+				mean_train_loss += loss.item()
 				if ((batch_idx + 1) % self.gradient_accumulate_steps == 0) or \
 					(batch_idx + 1 == len(train_loader)):
 
@@ -328,10 +330,12 @@ class FineTuner(object):
 						p_embeddings = embeddings[self.master_batch_size: 2*self.master_batch_size,:]
 						n_embeddings = embeddings[2*self.master_batch_size:,:]
 
-						mean_val_loss += self.loss_fn(a_embeddings, p_embeddings, n_embeddings)
+						mean_val_loss += self.loss_fn(a_embeddings, p_embeddings, n_embeddings).item()
 
 				mean_val_loss = mean_val_loss/len(val_loader)
 				val_logs[epoch] = mean_val_loss.clone().detach().cpu().item()
+
+			scheduler.step()
 
 		print(train_logs)
 		print(val_logs)
