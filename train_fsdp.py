@@ -5,24 +5,25 @@ import torch.multiprocessing as mp
 
 if __name__ == '__main__':
 	
-	trainer = FineTuner(num_epochs = 1,
-						gradient_accumulate_steps = 4,
-						lr = 0.0001,
-						pretrained_weight_dir = 'src\\server\\models\\pretrained_weights\\Facenet_pytorch',
-						return_examples = 128,
-						data_folder_path = 'face_dataset/faces_only',
-						ratio_other_user = 0.1,
-						number_celeb_in_train = 500,
-						number_celeb_in_val = 150,
-						batch_size = 4,
-						num_workers = 1)
+	trainer_args = {'num_epochs' : 1,
+					'gradient_accumulate_steps' : 4,
+					'lr' : 0.0001,
+					'pretrained_weight_dir' : 'src\\server\\models\\pretrained_weights\\Facenet_pytorch',
+					'return_examples' : 128,
+					'data_folder_path' : 'face_dataset/faces_only',
+					'ratio_other_user' : 0.1,
+					'number_celeb_in_train' : 500,
+					'number_celeb_in_val' : 150,
+					'batch_size' : 4,
+					'num_workers' : 1
+					}
 
     torch.manual_seed(1)
 
     WORLD_SIZE = torch.cuda.device_count()
     mp.spawn(trainer.training_loop,
-        args=(WORLD_SIZE,),
-        nprocs=WORLD_SIZE,
+        args = (WORLD_SIZE,trainer_args),
+        nprocs = WORLD_SIZE,
         join=True)
 
 

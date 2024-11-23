@@ -44,7 +44,8 @@ class FineTuner(object):
 					'block8', 'avgpool_1a', 'last_linear', 'last_bn'
 					]
 
-	def __init__(self, 
+	def __init__(self,
+				rank:int,
 				num_epochs:int,
 				gradient_accumulate_steps: int,
 				lr: float,
@@ -61,7 +62,6 @@ class FineTuner(object):
 		self.num_epochs = num_epochs
 		self.gradient_accumulate_steps = gradient_accumulate_steps
 		self.lr = lr
-		self.pretrained_weight_dir = pretrained_weight_dir
 		self.master_batch_size = batch_size*return_examples
 
 		self.loader_args_dict = {
@@ -73,6 +73,39 @@ class FineTuner(object):
 			'batch_size': batch_size,
 			'num_workers': num_workers
 		}
+
+	model = InceptionResnetV1(pretrained = 'casia-webface', 
+							classify=False,
+							num_classes=None, 
+							dropout_prob=0.6,
+							device = rank,
+							pretrained_weight_dir = pretrained_weight_dir)
+
+	for name, module in model.named_modules():
+		if name not in self.freeze_list:
+			for param in module.parameters():
+				param.requires_grad = False
+		else:
+			for param in module.parameters():
+				param.requires_grad = True
+
+	self.model = FSDP(model)
+
+	local_loader_args_dict = deepcopy(self.loader_args_dict)
+	local_loader_args_dict['rank'] = rank
+	local_loader_args_dict['world_size'] = world_size
+
+	self.train_loader = FineTuner._make_loaders(is_train = True,**local_loader_args_dict)
+	self.val_loader = FineTuner._make_loaders(is_train = False,**local_loader_args_dict)
+
+
+	self.optimizer = torch.optim.Adam(self.model.parameters(),lr = self.lr)
+	scheduler = MultiStepLR(self.optimizer, milestones = [i*self.num_epochs//3 for i in range(1,3)])
+
+	self.loss_fn = torch.nn.TripletMarginWithDistanceLoss(margin = 0.9, 
+						distance_function = lambda x, y: 1.0 - F.cosine_similarity(x, y),
+						swap=False,
+						reduction='mean')
 
 	
 	@staticmethod
@@ -171,55 +204,24 @@ class FineTuner(object):
 		dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
 		return ddp_loss[0]/ddp_loss[1]
 
-
-	def training_loop(self, 
-					rank :int, 
-					world_size:int, 
-					save_path:str = 'fine_tuning.pt'):
+	def training_loop(  rank :int, 
+						world_size:int,
+						tuner_dict: dict, 
+						save_path:str = 'fine_tuning.pt'):
 		"""Main training function"""
 		setup(rank, world_size)
-
-		local_loader_args_dict = deepcopy(self.loader_args_dict)
-		local_loader_args_dict['rank'] = rank
-		local_loader_args_dict['world_size'] = world_size
-
-		self.train_loader = FineTuner._make_loaders(is_train = True,**local_loader_args_dict)
-		self.val_loader = FineTuner._make_loaders(is_train = False,**local_loader_args_dict)
-
-
-		self.model = InceptionResnetV1(pretrained = 'casia-webface', 
-										classify=False,
-										num_classes=None, 
-										dropout_prob=0.6,
-										device = rank,
-										pretrained_weight_dir = self.pretrained_weight_dir)
-
-		for name, module in self.model.named_modules():
-			if name not in self.freeze_list:
-				for param in module.parameters():
-					param.requires_grad = False
-			else:
-				for param in module.parameters():
-					param.requires_grad = True
-
-		self.model = FSDP(self.model)
-
-		self.optimizer = torch.optim.Adam(self.model.parameters(),lr = self.lr)
-		scheduler = MultiStepLR(self.optimizer, milestones = [i*self.num_epochs//3 for i in range(1,3)])
-
-		self.loss_fn = torch.nn.TripletMarginWithDistanceLoss(margin = 0.9, 
-							distance_function = lambda x, y: 1.0 - F.cosine_similarity(x, y),
-							swap=False,
-							reduction='mean')
+		
+		tuner_dict['rank'] = rank
+		trainer = FineTuner(**tuner_dict)
 
 		train_logs = {}
 		val_logs = {}
 
-		for epoch in range(1,self.num_epochs+1):
-			train_logs[epoch] = self._train()
+		for epoch in range(1,trainer.num_epochs+1):
+			train_logs[epoch] = trainer._train(rank, world_size)
 
-			if self.num_epochs//epoch == 2 or epoch == self.num_epochs:
-				val_logs[epoch] = self._eval()
+			if trainer.num_epochs//epoch == 2 or epoch == trainer.num_epochs:
+				val_logs[epoch] = trainer._eval(rank, world_size)
 
 			scheduler.step()
 
@@ -228,7 +230,7 @@ class FineTuner(object):
 			print(val_logs)
 
 		dist.barrier()
-		state = self.model.state_dict()
+		state = trainer.model.state_dict()
 		# save checkpoints
 		if rank == 0:
 			torch.save(state, save_path)
