@@ -44,7 +44,7 @@ class FineTuner(object):
 					'block8', 'avgpool_1a', 'last_linear', 'last_bn'
 					]
 
-	def __init__(self,
+	def __init__(self, 
 				rank:int,
 				num_epochs:int,
 				gradient_accumulate_steps: int,
@@ -204,15 +204,15 @@ class FineTuner(object):
 		dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
 		return ddp_loss[0]/ddp_loss[1]
 
-	def training_loop(  rank :int, 
+	def training_loop( rank :int, 
 						world_size:int,
-						tuner_dict: dict, 
-						save_path:str = 'fine_tuning.pt'):
+						trainer_args: dict, 
+						save_path: str):
 		"""Main training function"""
 		setup(rank, world_size)
 		
-		tuner_dict['rank'] = rank
-		trainer = FineTuner(**tuner_dict)
+		trainer_args['rank'] = rank
+		trainer = FineTuner(**trainer_args)
 
 		train_logs = {}
 		val_logs = {}
