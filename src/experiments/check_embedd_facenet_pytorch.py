@@ -157,8 +157,7 @@ class Test_Embeddings(object):
 
 				sorted_score_dict = {k:v for k,v in \
 									sorted(score_dict.items(), key=lambda item: item[1])
-                                }
+									}
+				result[user_name] = list(sorted_score_dict.keys())[-1]
 
-                result[user_name] = list(sorted_score_dict.keys())[-1]
-
-            print(result)
+			print(result)
