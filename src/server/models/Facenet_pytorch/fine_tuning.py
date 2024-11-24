@@ -75,6 +75,10 @@ class FineTuner(object):
 			'num_workers': num_workers
 		}
 
+		my_auto_wrap_policy = functools.partial(
+        							size_based_auto_wrap_policy, 
+        							min_num_params=20000)
+
 		model = InceptionResnetV1(pretrained = 'casia-webface', 
 								classify=False,
 								num_classes=None, 
@@ -90,7 +94,7 @@ class FineTuner(object):
 				for param in module.parameters():
 					param.requires_grad = True
 
-		self.model = FSDP(model, use_orig_params = True)
+		self.model = FSDP(model, use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
 		local_loader_args_dict['rank'] = rank
@@ -107,7 +111,6 @@ class FineTuner(object):
 							distance_function = lambda x, y: 1.0 - F.cosine_similarity(x, y),
 							swap=False,
 							reduction='mean')
-
 	
 	@staticmethod
 	def _make_loaders(is_train:bool,
