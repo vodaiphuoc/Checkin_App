@@ -132,6 +132,7 @@ class FineTuner(object):
 								number_celeb_in_train = number_celeb_in_train,
 								number_celeb_in_val = number_celeb_in_val
 		)
+		print("Length of dataset:", len(dataset), f', is train: {is_train}')
 		sampler = DistributedSampler(dataset, 
 									rank=rank, 
 									num_replicas=world_size, 
