@@ -163,7 +163,7 @@ class FineTuner(object):
 	def _train(self, rank:int, world_size:int)->float:
 		ddp_loss = torch.zeros(2).to(rank)
 		self.model.train()
-		print('Length of loader',len(self.train_loader)))
+		print('Length of loader',len(self.train_loader))
 		for batch_idx, (a_batch, p_batch, n_batch) in tqdm(enumerate(self.train_loader),
 															total = len(self.train_loader)):
 
@@ -194,7 +194,7 @@ class FineTuner(object):
 	def _eval(self, rank:int, world_size:int)->float:
 		ddp_loss = torch.zeros(2).to(rank)
 		self.model.eval()
-		print('Length of loader',len(self.val_loader)))
+		print('Length of loader',len(self.val_loader))
 		with torch.no_grad():
 			for batch_idx, (val_a_batch, val_p_batch, val_n_batch) in enumerate(self.val_loader):
 				val_model_inputs = self._pre_process_batch_data([val_a_batch, val_p_batch, val_n_batch], rank)
