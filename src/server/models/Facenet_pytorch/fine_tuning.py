@@ -230,14 +230,14 @@ def training_loop( rank :int,
 	val_logs = {}
 
 	for epoch in range(1,trainer.num_epochs+1):
-		self.train_sampler.set_epoch(epoch)
+		trainer.train_sampler.set_epoch(epoch)
 		train_logs[epoch] = trainer._train(rank, world_size)
 
 		if trainer.num_epochs//epoch == 2 or epoch == trainer.num_epochs:
-			self.val_sampler.set_epoch(epoch)
+			trainer.val_sampler.set_epoch(epoch)
 			val_logs[epoch] = trainer._eval(rank, world_size)
 
-		self.scheduler.step()
+		trainer.scheduler.step()
 
 	if rank == 0:
 		print(train_logs)
