@@ -37,11 +37,11 @@ class Test_Embeddings(object):
 				):
 		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 		self.recognition_model = InceptionResnetV1(pretrained = model_string, 
-							classify=False, 
-							num_classes=None, 
-							dropout_prob=0.6,
-							device=self.device,
-							pretrained_weight_dir = pretrained_weight_dir
+													classify=False, 
+													num_classes=None, 
+													dropout_prob=0.6,
+													device=self.device,
+													pretrained_weight_dir = pretrained_weight_dir
 	    									)
 		self.data_folder_path = data_folder_path
 
@@ -85,7 +85,7 @@ class Test_Embeddings(object):
 		for user_folder in tqdm(user_folders, total = len(user_folders)):
 			user_name = os.path.split(user_folder)[-1].split('.')[0]
 			user_init_data = self._run_single_user(user_name = user_name, 
-													return_embedding_as_matrix = return_embedding_as_matrix)
+								return_embedding_as_matrix = return_embedding_as_matrix)
 
 			if return_embedding_as_matrix:
 				master_init_data.append(user_init_data)

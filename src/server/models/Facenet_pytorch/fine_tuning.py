@@ -9,7 +9,7 @@ from copy import deepcopy
 from tqdm import tqdm
 import cv2 as cv
 import json
-from src.server.models.Facenet_pytorch.utils.fine_tuning_utils import TripLetDataset
+from src.server.models.Facenet_pytorch.utils.fine_tuning_utils import TripLetDataset, TripLetDataset_V2
 from src.server.models.Facenet_pytorch.inception_resnet_v1 import InceptionResnetV1
 
 import torch.distributed as dist
@@ -60,7 +60,6 @@ class FineTuner(object):
 				batch_size:int = 64,
 				num_workers:int = 2
 				):
-		print(rank)
 		self.num_epochs = num_epochs
 		self.gradient_accumulate_steps = gradient_accumulate_steps
 		self.lr = lr
@@ -105,7 +104,7 @@ class FineTuner(object):
 		self.val_loader, self.val_sampler = FineTuner._make_loaders(is_train = False,**local_loader_args_dict)
 
 
-		self.optimizer = torch.optim.Adam(self.model.parameters(),lr = self.lr)
+		self.optimizer = torch.optim.AdamW(self.model.parameters(),lr = self.lr)
 		self.scheduler = MultiStepLR(self.optimizer, milestones = [i*self.num_epochs//3 for i in range(1,3)])
 
 		self.loss_fn = torch.nn.TripletMarginWithDistanceLoss(margin = 0.9, 
@@ -118,7 +117,7 @@ class FineTuner(object):
 					rank:int,
 					world_size:int,
 					return_examples:int,
-					data_folder_path:str, 
+					data_folder_path:str,
 					ratio_other_user:float,
 					number_celeb_in_train:int,
 					number_celeb_in_val:int,
@@ -127,7 +126,7 @@ class FineTuner(object):
 					):
 		dataset = TripLetDataset(return_examples = return_examples,
 								is_train = is_train,
-								data_folder_path = data_folder_path, 
+								data_folder_path = data_folder_path,
 								ratio_other_user = ratio_other_user,
 								number_celeb_in_train = number_celeb_in_train,
 								number_celeb_in_val = number_celeb_in_val
@@ -211,7 +210,7 @@ class FineTuner(object):
 		dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
 		return ddp_loss[0]/ddp_loss[1]
 
-def training_loop( rank :int, 
+def training_loop( rank :int,
 					world_size:int,
 					trainer_args: dict, 
 					save_path: str):
