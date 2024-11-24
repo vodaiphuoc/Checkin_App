@@ -116,8 +116,7 @@ class Test_Embeddings(object):
 		master_init_data = self._get_total_init_user_data(return_embedding_as_matrix = return_embedding_as_matrix)
 		print('number init data: ',len(master_init_data))
 
-		if run_init_push:
-			assert not return_embedding_as_matrix, f"Cannot insert into DB with embeddings as matrix"
+		if run_init_push and not return_embedding_as_matrix:
 			db_engine = Mongo_Handler(master_config= master_config,
 						ini_push= True,
 						init_data= master_init_data)
