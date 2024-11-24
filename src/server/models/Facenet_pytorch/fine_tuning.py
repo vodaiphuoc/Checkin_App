@@ -101,8 +101,8 @@ class FineTuner(object):
 		local_loader_args_dict['rank'] = rank
 		local_loader_args_dict['world_size'] = world_size
 
-		self.train_loader = FineTuner._make_loaders(is_train = True,**local_loader_args_dict)
-		self.val_loader = FineTuner._make_loaders(is_train = False,**local_loader_args_dict)
+		self.train_loader, self.train_sampler = FineTuner._make_loaders(is_train = True,**local_loader_args_dict)
+		self.val_loader, self.val_sampler = FineTuner._make_loaders(is_train = False,**local_loader_args_dict)
 
 
 		self.optimizer = torch.optim.Adam(self.model.parameters(),lr = self.lr)
@@ -138,7 +138,7 @@ class FineTuner(object):
 									num_replicas=world_size, 
 									shuffle=True if is_train else False)
 		
-		return torch.utils.data.DataLoader(dataset, 
+		return (torch.utils.data.DataLoader(dataset, 
 										batch_size= batch_size,
 										shuffle=False, 
 										sampler = sampler,
@@ -147,7 +147,8 @@ class FineTuner(object):
 										drop_last=True,
 										prefetch_factor=2,
 										persistent_workers=True
-		)
+		),
+		sampler)
 
 	def _pre_process_batch_data(self, 
 								list_batch: List[torch.Tensor], 
@@ -214,7 +215,11 @@ def training_loop( rank :int,
 					world_size:int,
 					trainer_args: dict, 
 					save_path: str):
-	"""Main training function"""
+	"""Main training function
+		In distributed mode, calling the set_epoch() method at the beginning of each epoch before 
+	creating the DataLoader iterator is necessary to make shuffling work properly across multiple 
+	epochs. Otherwise, the same ordering will be always used.
+	"""
 	setup(rank, world_size)
 	
 	trainer_args['rank'] = rank
@@ -225,9 +230,11 @@ def training_loop( rank :int,
 	val_logs = {}
 
 	for epoch in range(1,trainer.num_epochs+1):
+		self.train_sampler.set_epoch(epoch)
 		train_logs[epoch] = trainer._train(rank, world_size)
 
 		if trainer.num_epochs//epoch == 2 or epoch == trainer.num_epochs:
+			self.val_sampler.set_epoch(epoch)
 			val_logs[epoch] = trainer._eval(rank, world_size)
 
 		scheduler.step()
