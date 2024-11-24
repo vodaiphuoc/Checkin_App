@@ -28,9 +28,9 @@ import os
 
 class Test_Embeddings(object):
 	def __init__(self,
-		data_folder_path: str, 
-		pretrained_weight_dir: str,
-		model_string: Literal['casia-webface','fine_tuning'],
+				data_folder_path: str, 
+				pretrained_weight_dir: str,
+				model_string: Literal['casia-webface','fine_tuning'],
 				# p_state_dict_path: str,
                 # r_state_dict_path: str,
                 # o_state_dict_path: str,
@@ -47,7 +47,7 @@ class Test_Embeddings(object):
 
 	def _run_single_user(self, 
 				user_name:str, 
-				return_embedding_only: bool = False
+				return_embedding_as_matrix: bool = False
 				):
 		user_imgs = []
 		for path in glob.glob(f"{self.data_folder_path}/{user_name}/*"):
@@ -65,57 +65,100 @@ class Test_Embeddings(object):
 		assert embeddings.shape[1] == 512
 
 		if return_embedding_only:
-			return embeddings
+			return {'user_name': user_name,
+					'embeddings': embeddings
+					}
 		else:
 			user_init_data = [{
 				'user_name': user_name,
 				'password': '123',
-				'embedding': embeddings[id].tolist(),
+				'embedding': embeddings[id],
 			} 
 			for id in range(embeddings.shape[0])
 			]
 			return user_init_data
 
-	def _get_total_init_user_data(self):
+	def _get_total_init_user_data(self, return_embedding_as_matrix:bool):
 		user_folders = glob.glob(f"{self.data_folder_path}/*")
 		master_init_data = []
 
 		for user_folder in tqdm(user_folders, total = len(user_folders)):
 			user_name = os.path.split(user_folder)[-1].split('.')[0]
-			user_init_data = self._run_single_user(user_name = user_name)
-			master_init_data.extend(user_init_data)
+			user_init_data = self._run_single_user(user_name = user_name, 
+													return_embedding_as_matrix = return_embedding_as_matrix)
+
+			if return_embedding_as_matrix:
+				master_init_data.append(user_init_data)
+			else:
+				master_init_data.extend(user_init_data)
 		
 		return master_init_data
 
-	def pipelines(self, run_init_push: bool, evaluation: bool):
+	@staticmethod
+	def get_cosim(input1:torch.Tensor, input2:torch.Tensor)->float:
+		norm_1 = torch.unsqueeze(torch.norm(input1, dim =1), dim = 1) 
+		norm_2 = torch.unsqueeze(torch.norm(input2, dim =1), dim = 0)
+		length_mul_matrix = 1/torch.mul(norm_1, norm_2)
+
+		dot_product = torch.matmul(input1, torch.transpose(input2,0,1))
+
+		dot_product_score = torch.mul(dot_product, length_mul_matrix)
+
+		return torch.mean(dot_product_score).item()
+
+
+	def pipelines(self, 
+				run_init_push: bool, 
+				evaluation: bool, 
+				return_embedding_as_matrix: bool
+				):
 		master_config = get_program_config()
-		
+		master_init_data = self._get_total_init_user_data(return_embedding_as_matrix = return_embedding_as_matrix)
+		print('number init data: ',len(master_init_data))
+
 		if run_init_push:
-			master_init_data = self._get_total_init_user_data()
-			print('number init data: ',len(master_init_data))
+			assert not return_embedding_as_matrix, f"Cannot insert into DB with embeddings as matrix"
 			db_engine = Mongo_Handler(master_config= master_config,
 						ini_push= True,
 						init_data= master_init_data)
-			
-
+		
 		if evaluation:
-			db_engine = Mongo_Handler(master_config= master_config,
-						ini_push= False)
+			# db_engine = Mongo_Handler(master_config= master_config,
+			# 			ini_push= False)
 			
+			# result = {}
+			# for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
+			# 	user_name = os.path.split(main_user_dir)[-1].split('.')[0]
+			# 	embeddings = self._run_single_user(user_name = user_name, 
+			# 										return_embedding_only = True)
+
+			# 	num_embeddings = embeddings.shape[0]
+			# 	step = int(num_embeddings)//3
+			# 	predict_name_list = []
+			# 	for embedd_idx in range(0, num_embeddings, step):
+			# 		query_embeddings = embeddings[embedd_idx: embedd_idx+step,:]
+			# 		pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = query_embeddings)
+			# 		predict_name_list.append(pred_name)
+
+			# 	result[user_name] = predict_name_list
+			# print(result)
+
 			result = {}
 			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
 				user_name = os.path.split(main_user_dir)[-1].split('.')[0]
-				embeddings = self._run_single_user(user_name = user_name, 
-													return_embedding_only = True)
+				user_embeddings_dict = self._run_single_user(user_name = user_name, 
+															return_embedding_as_matrix = True)
+				
+				score_dict = {
+					user_dict['user_name']: Test_Embeddings.get_cosim(user_dict['embeddings'], 
+																	user_embeddings_dict['embeddings'])
+					for user_dict in master_init_data
+				}
 
-				num_embeddings = embeddings.shape[0]
-				step = int(num_embeddings)//3
-				predict_name_list = []
-				for embedd_idx in range(0, num_embeddings, step):
-					query_embeddings = embeddings[embedd_idx: embedd_idx+step,:]
-					pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = query_embeddings)
-					predict_name_list.append(pred_name)
+				sorted_score_dict = {k:v for k,v in \
+									sorted(score_dict.items(), key=lambda item: item[1])
+                                }
 
-				result[user_name] = predict_name_list
+                result[user_name] = list(sorted_score_dict.keys())[-1]
 
-			print(result)
+            print(result)
