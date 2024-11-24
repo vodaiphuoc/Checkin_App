@@ -64,7 +64,7 @@ class Test_Embeddings(object):
 		# assert embeddings.shape[0] == len(filtered_faces)
 		assert embeddings.shape[1] == 512
 
-		if return_embedding_only:
+		if return_embedding_as_matrix:
 			return {'user_name': user_name,
 					'embeddings': embeddings
 					}
