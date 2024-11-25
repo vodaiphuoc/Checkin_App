@@ -38,8 +38,9 @@ def main_mapping(rank, world_size, batch):
 								device = rank,
 								pretrained_weight_dir = '/kaggle/input/massive-faces/Facenet_pytorch/Facenet_pytorch'
         					).to(rank)
-        opt_mod = torch.compile(mod)
-        opt_mod = FSDP(opt_mod, use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
+        
+        opt_mod = FSDP(mod, use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
+        opt_mod = torch.compile(opt_mod)
         t = torch.randn(2,3,160,160).to(rank)
         print(opt_mod(t))
         cleanup()

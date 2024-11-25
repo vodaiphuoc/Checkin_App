@@ -118,7 +118,7 @@ class FineTuner(object):
 		# 					swap=False,
 		# 					reduction='mean')
 
-		self.loss_fn = torch.compile(CustomeTripletLoss(margin = 1.0, device = rank), backend = 'cudagraphs')
+		self.loss_fn = CustomeTripletLoss(margin = 1.0, device = rank)
 	
 	@staticmethod
 	def _make_loaders(is_train:bool,
