@@ -6,14 +6,18 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 import torch
 import torch.multiprocessing as mp
 import os
+import functools
 
-# class MyModule(torch.nn.Module):
-#     def __init__(self):
-#         super().__init__()
-#         self.lin = torch.nn.Conv2d(3, 32, kernel_size = (3,3), stride = 1)
+from torch.distributed.fsdp.wrap import (
+    size_based_auto_wrap_policy,
+    enable_wrap,
+    wrap,
+)
 
-#     def forward(self, x):
-#         return torch.mean(torch.nn.functional.relu(self.lin(x)))
+
+my_auto_wrap_policy = functools.partial(
+        							size_based_auto_wrap_policy, 
+        							min_num_params=20000)
 
 def setup(rank:int, world_size:int):
     os.environ['MASTER_ADDR'] = 'localhost'
@@ -35,7 +39,7 @@ def main_mapping(rank, world_size, batch):
 								pretrained_weight_dir = '/kaggle/input/massive-faces/Facenet_pytorch/Facenet_pytorch'
         					).to(rank)
         opt_mod = torch.compile(mod)
-        opt_mod = FSDP(opt_mod, use_orig_params = True)
+        opt_mod = FSDP(opt_mod, use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
         t = torch.randn(2,3,160,160).to(rank)
         print(opt_mod(t))
         cleanup()
