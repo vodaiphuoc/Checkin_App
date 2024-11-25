@@ -32,7 +32,7 @@ def main_mapping(rank, world_size, batch):
 								num_classes=None, 
 								dropout_prob=0.6,
 								device = rank,
-								pretrained_weight_dir = '/kaggle/input/massive-faces'
+								pretrained_weight_dir = '/kaggle/input/massive-faces/Facenet_pytorch/Facenet_pytorch'
         					).to(rank)
         opt_mod = torch.compile(mod)
         opt_mod = FSDP(opt_mod, use_orig_params = True)
