@@ -325,17 +325,17 @@ class CustomeTripletLoss(torch.nn.Module):
 		return None
 
 	
-def get_cosim(self, input1:torch.Tensor, input2:torch.Tensor)->torch.Tensor:
-	norm_1 = torch.unsqueeze(torch.norm(input1, dim = -1), dim = -1)
-	norm_2 = torch.unsqueeze(torch.norm(input2, dim = -1), dim = 1)
-	
-	length_mul_matrix = 1/torch.mul(norm_1, norm_2)
-	
-	dot_product = torch.matmul(input1, torch.transpose(input2,1,-1))
+	def get_cosim(self, input1:torch.Tensor, input2:torch.Tensor)->torch.Tensor:
+		norm_1 = torch.unsqueeze(torch.norm(input1, dim = -1), dim = -1)
+		norm_2 = torch.unsqueeze(torch.norm(input2, dim = -1), dim = 1)
+		
+		length_mul_matrix = 1/torch.mul(norm_1, norm_2)
+		
+		dot_product = torch.matmul(input1, torch.transpose(input2,1,-1))
 
-	dot_product_score = torch.mul(dot_product, length_mul_matrix)
+		dot_product_score = torch.mul(dot_product, length_mul_matrix)
 
-	return 1.0 - torch.mean(dot_product_score, dim = (1,2))
+		return 1.0 - torch.mean(dot_product_score, dim = (1,2))
 
 	def forward(self, 
 				a_embeddings: torch.Tensor, 
