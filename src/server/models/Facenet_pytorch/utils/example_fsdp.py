@@ -4,6 +4,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch
 import torch.multiprocessing as mp
+import os
 
 class MyModule(torch.nn.Module):
     def __init__(self):
