@@ -100,7 +100,7 @@ class FineTuner(object):
 		
 		torch.cuda.set_device(rank)
 		model = torch.compile(model.to(rank))
-		self.model = FSDP(model, use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
+		self.model = FSDP(model, use_orig_params = True)
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
 		local_loader_args_dict['rank'] = rank
