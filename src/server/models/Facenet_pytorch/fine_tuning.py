@@ -99,7 +99,7 @@ class FineTuner(object):
 		import triton
 		
 		torch.cuda.set_device(rank)
-		model = torch.compile(model.to(rank), backend = 'inductor')
+		model = torch.compile(model.to(rank), backend = 'cudagraphs')
 		self.model = FSDP(model, use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
@@ -118,7 +118,7 @@ class FineTuner(object):
 		# 					swap=False,
 		# 					reduction='mean')
 
-		self.loss_fn = torch.compile(CustomeTripletLoss(margin = 1.0, device = rank))
+		self.loss_fn = torch.compile(CustomeTripletLoss(margin = 1.0, device = rank), backend = 'cudagraphs')
 	
 	@staticmethod
 	def _make_loaders(is_train:bool,
