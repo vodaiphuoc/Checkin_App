@@ -96,7 +96,7 @@ class FineTuner(object):
 
 		# import torch._dynamo
 		# torch._dynamo.reset()
-		import triton
+		# import triton
 		
 		torch.cuda.set_device(rank)
 		model = torch.compile(model.to(rank), backend = 'cudagraphs')
