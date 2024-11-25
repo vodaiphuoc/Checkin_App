@@ -129,7 +129,7 @@ class FineTuner(object):
 		dataset = TripLetDataset_V2(return_examples = return_examples,
 								is_train = is_train,
 								data_folder_path = data_folder_path,
-								ratio_other_user = ratio_other_user,
+								number_other_users = ratio_other_user,
 								number_celeb_in_train = number_celeb_in_train,
 								number_celeb_in_val = number_celeb_in_val
 		)
