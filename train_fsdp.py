@@ -33,3 +33,4 @@ if __name__ == '__main__':
 	# 			).pipelines(run_init_push = True, evaluation = True)
 
 
+# !cd /kaggle/working/Checkin_App
