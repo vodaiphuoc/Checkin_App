@@ -97,8 +97,9 @@ class FineTuner(object):
 		import torch._dynamo
 		torch._dynamo.reset()
 
-
+		torch.cuda.set_device(rank)
 		model = torch.compile(model).to(rank)
+		
 		self.model = FSDP(model, use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
