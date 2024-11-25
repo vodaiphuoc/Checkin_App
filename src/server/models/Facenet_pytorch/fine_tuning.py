@@ -9,7 +9,7 @@ from copy import deepcopy
 from tqdm import tqdm
 import cv2 as cv
 import json
-from src.server.models.Facenet_pytorch.utils.fine_tuning_utils import TripLetDataset, TripLetDataset_V2
+from src.server.models.Facenet_pytorch.utils.fine_tuning_utils import TripLetDataset, TripLetDataset_V2, CustomeTripletLoss
 from src.server.models.Facenet_pytorch.inception_resnet_v1 import InceptionResnetV1
 
 import torch.distributed as dist
@@ -107,10 +107,12 @@ class FineTuner(object):
 		self.optimizer = torch.optim.AdamW(self.model.parameters(),lr = self.lr)
 		self.scheduler = MultiStepLR(self.optimizer, milestones = [i*self.num_epochs//3 for i in range(1,3)])
 
-		self.loss_fn = torch.nn.TripletMarginWithDistanceLoss(margin = 0.9, 
-							distance_function = lambda x, y: 1.0 - F.cosine_similarity(x, y),
-							swap=False,
-							reduction='mean')
+		# self.loss_fn = torch.nn.TripletMarginWithDistanceLoss(margin = 0.9, 
+		# 					distance_function = lambda x, y: 1.0 - F.cosine_similarity(x, y),
+		# 					swap=False,
+		# 					reduction='mean')
+
+		self.loss_fn = CustomeTripletLoss(margin = 1.0, device = rank)
 	
 	@staticmethod
 	def _make_loaders(is_train:bool,
@@ -166,12 +168,21 @@ class FineTuner(object):
 		for batch_idx, (a_batch, p_batch, n_batch) in tqdm(enumerate(self.train_loader),
 															total = len(self.train_loader)):
 
+			batch_size = a_batch.shape[0]
+			a_N = a_batch.shape[1]
+			p_N = p_batch.shape[1]
+			n_N = n_batch.shape[1]
+
 			model_inputs = self._pre_process_batch_data([a_batch, p_batch, n_batch], rank)
 			embeddings = self.model(model_inputs)
 
 			a_embeddings = embeddings[0: self.master_batch_size,:]
 			p_embeddings = embeddings[self.master_batch_size: 2*self.master_batch_size,:]
 			n_embeddings = embeddings[2*self.master_batch_size:,:]
+
+			a_embeddings = a_embeddings.reshape(batch_size, a_N, 512)
+			p_embeddings = p_embeddings.reshape(batch_size, p_N, 512)
+			n_embeddings = n_embeddings.reshape(batch_size, n_N, 512)
 
 			loss = self.loss_fn(a_embeddings, p_embeddings, n_embeddings)
 

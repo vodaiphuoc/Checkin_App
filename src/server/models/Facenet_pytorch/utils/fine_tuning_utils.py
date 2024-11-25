@@ -277,7 +277,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 													k = len(self.user2img_path[other_user_idx])//5)
 									])
 		return (TripLetDataset_V2._adjust2fixe_size(positives, self.return_examples),
-				TripLetDataset_V2._adjust2fixe_size(neg_img_list, self.return_examples*2)
+				TripLetDataset_V2._adjust2fixe_size(neg_img_list, self.return_examples)
 				)
 
 	def _paths2tensor(self, path_list: List[str])->torch.Tensor:
@@ -319,5 +319,35 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 
 
 class CustomeTripletLoss(torch.nn.Module):
-	def __init__(self, margin = 0.9):
+	def __init__(self, device: Union[int, torch.device], margin:int = 0.9):
+		self.margin = torch.tensor(margin, dtype = torch.float32)
+		return None
+
+	
+def get_cosim(self, input1:torch.Tensor, input2:torch.Tensor)->torch.Tensor:
+	norm_1 = torch.unsqueeze(torch.norm(input1, dim = -1), dim = -1)
+	norm_2 = torch.unsqueeze(torch.norm(input2, dim = -1), dim = 1)
+	
+	length_mul_matrix = 1/torch.mul(norm_1, norm_2)
+	
+	dot_product = torch.matmul(input1, torch.transpose(input2,1,-1))
+
+	dot_product_score = torch.mul(dot_product, length_mul_matrix)
+
+	return 1.0 - torch.mean(dot_product_score, dim = (1,2))
+
+	def forward(self, 
+				a_embeddings: torch.Tensor, 
+				p_embeddings: torch.Tensor, 
+				n_embeddings: torch.Tensor
+				)->torch.Tensor:
+		"""
+		Parameters:
+			a_embeddings: torch.Tensor shape (batch, return_examples, embedding_size (e.g 512) )
+			p_embeddings: torch.Tensor shape (batch, return_examples, embedding_size (e.g 512) )
+			n_embeddings: torch.Tensor shape (batch, return_examples, embedding_size (e.g 512) )
 		
+		"""
+		sim_a_p = self.get_cosim(a_embeddings, p_embeddings)
+		sim_a_n = self.get_cosim(a_embeddings, n_embeddings)
+		return torch.mean(torch.max(sim_a_p - sim_a_n + self.margin, torch.zeros(sim_a_p.shape)))
