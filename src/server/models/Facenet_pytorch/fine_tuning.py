@@ -94,6 +94,10 @@ class FineTuner(object):
 				for param in module.parameters():
 					param.requires_grad = True
 
+		import torch._dynamo
+		torch._dynamo.reset()
+
+		model = torch.compile(model)
 		self.model = FSDP(model, use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
