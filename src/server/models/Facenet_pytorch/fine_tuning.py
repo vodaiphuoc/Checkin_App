@@ -126,7 +126,7 @@ class FineTuner(object):
 					batch_size:int,
 					num_workers:int
 					):
-		dataset = TripLetDataset(return_examples = return_examples,
+		dataset = TripLetDataset_V2(return_examples = return_examples,
 								is_train = is_train,
 								data_folder_path = data_folder_path,
 								ratio_other_user = ratio_other_user,
