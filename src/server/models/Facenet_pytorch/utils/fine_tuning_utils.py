@@ -321,7 +321,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 class CustomeTripletLoss(torch.nn.Module):
 	def __init__(self, device: Union[int, torch.device], margin:int = 0.9):
 		super(CustomeTripletLoss, self).__init__()
-		self.margin = torch.tensor(margin, dtype = torch.float32)
+		self.margin = torch.tensor(margin, dtype = torch.float32).to(device)
 		return None
 
 	
@@ -352,5 +352,5 @@ class CustomeTripletLoss(torch.nn.Module):
 		sim_a_p = self.get_cosim(a_embeddings, p_embeddings)
 		sim_a_n = self.get_cosim(a_embeddings, n_embeddings)
 
-		tripletloss = sim_a_p - sim_a_n + self.margin.to(a_embeddings.device)
+		tripletloss = sim_a_p - sim_a_n + self.margin
 		return torch.mean(torch.max(tripletloss,torch.zeros(sim_a_p.shape).to(a_embeddings.device)))

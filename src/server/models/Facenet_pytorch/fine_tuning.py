@@ -94,13 +94,11 @@ class FineTuner(object):
 				for param in module.parameters():
 					param.requires_grad = True
 
-		import torch._dynamo
-		torch._dynamo.reset()
-
-		torch.cuda.set_device(rank)
-		model = torch.compile(model).to(rank)
+		# import torch._dynamo
+		# torch._dynamo.reset()
 		
-		self.model = FSDP(model, use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
+		torch.cuda.set_device(rank)
+		self.model = FSDP(model.to(rank), use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
 		local_loader_args_dict['rank'] = rank
@@ -118,7 +116,7 @@ class FineTuner(object):
 		# 					swap=False,
 		# 					reduction='mean')
 
-		self.loss_fn = CustomeTripletLoss(margin = 1.0, device = rank)
+		self.loss_fn = torch.compile(CustomeTripletLoss(margin = 1.0, device = rank))
 	
 	@staticmethod
 	def _make_loaders(is_train:bool,
