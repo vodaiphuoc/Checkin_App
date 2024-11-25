@@ -320,6 +320,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 
 class CustomeTripletLoss(torch.nn.Module):
 	def __init__(self, device: Union[int, torch.device], margin:int = 0.9):
+		super(CustomeTripletLoss, self).__init__()
 		self.margin = torch.tensor(margin, dtype = torch.float32)
 		return None
 
