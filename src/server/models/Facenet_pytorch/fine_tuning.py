@@ -99,8 +99,7 @@ class FineTuner(object):
 		# import triton
 		
 		torch.cuda.set_device(rank)
-		model = torch.compile(model.to(rank), fullgraph = True, dynamic = True, backend = 'cudagraphs')
-		self.model = FSDP(model, use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
+		self.model = FSDP(model.to(rank), use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
 		local_loader_args_dict['rank'] = rank
