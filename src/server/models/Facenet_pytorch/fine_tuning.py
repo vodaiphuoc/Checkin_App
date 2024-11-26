@@ -65,6 +65,7 @@ class FineTuner(object):
 		self.gradient_accumulate_steps = gradient_accumulate_steps
 		self.lr = lr
 		self.master_batch_size = batch_size*return_examples
+		self.p_n_ratio = p_n_ratio
 
 		self.loader_args_dict = {
 			'return_examples': return_examples,
