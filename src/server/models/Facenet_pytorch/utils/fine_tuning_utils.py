@@ -203,9 +203,13 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 			glob_iter = glob.glob("*_*",root_dir = f"{data_folder_path}") + \
 						random.sample(glob.glob("[0-9]*", root_dir = f"{data_folder_path}"), 
 									k = number_celeb_in_train)
+
+			with open('dataset.json', "w") as f:
+				json.dump([ith: ele for ith, ele in enumerate(glob_iter)], indent = 4)
+
 		else:
-			glob_iter = glob.glob("*_*",root_dir = f"{data_folder_path}") + \
-						glob.glob("[0-9]*", root_dir = f"{data_folder_path}")[:number_celeb_in_val]
+			glob_iter = glob.glob("*_*",root_dir = f"{data_folder_path}") # + \
+						# glob.glob("[0-9]*", root_dir = f"{data_folder_path}")[:number_celeb_in_val]
 
 		# MAIN DIFFERENCE IN V2
 		# user maps to other users
