@@ -329,8 +329,8 @@ class CustomeTripletLoss(torch.nn.Module):
 		p_n_ratio:int = 4
 		)->None:
 		super(CustomeTripletLoss, self).__init__()
-		self.margin = torch.tensor(margin, dtype = torch.float32).to(device)
-		self.zero = torch.zeros(sim_a_p.shape, dtype = torch.float32).to(device)
+		self.margin = torch.tensor([margin]*batch_size, dtype = torch.float32).to(device)
+		self.zero = torch.zeros(self.margin.shape, dtype = torch.float32).to(device)
 		self.batch_size = batch_size
 		self.return_examples = return_examples
 		self.p_n_ratio = p_n_ratio
