@@ -104,13 +104,12 @@ class FineTuner(object):
 		torch.cuda.set_device(rank)
 		
 		model = model.to(rank)
-		fsdp_model = FSDP(model, 
+		self.model = FSDP(model, 
 						use_orig_params = True, 
 						auto_wrap_policy= my_auto_wrap_policy,
 						device_id=torch.cuda.current_device(),
 						backward_prefetch = BackwardPrefetch.BACKWARD_PRE
 						)
-		self.model = torch.compile(fsdp_model.to(rank))
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
 		local_loader_args_dict['rank'] = rank
@@ -194,8 +193,8 @@ class FineTuner(object):
 			p_N = p_batch.shape[1]
 			n_N = n_batch.shape[1]
 
-			print(a_batch.shape)
-			print(n_batch.shape)
+			# print(a_batch.shape)
+			# print(n_batch.shape)
 			model_inputs = self._pre_process_batch_data([a_batch, p_batch, n_batch], rank)
 			embeddings = self.model(model_inputs)
 

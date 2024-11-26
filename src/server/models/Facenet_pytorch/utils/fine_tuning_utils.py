@@ -307,7 +307,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 				a_path.append(self.data_folder_path+'/'+ self.glob_iter[k]+'/'+v[0])
 				p_path.append(self.data_folder_path+'/'+ self.glob_iter[k]+'/'+v[1])
 
-		print(len(a_path), len(n_path))
+		# print(len(a_path), len(n_path))
 		for map_dict in neg_img_list:
 			for k, v in map_dict.items():
 				n_path.append(self.data_folder_path+'/'+ self.glob_iter[k]+'/'+v)
