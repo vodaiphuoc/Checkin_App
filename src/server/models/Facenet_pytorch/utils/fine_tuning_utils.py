@@ -242,7 +242,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 						)-> List[Dict[str,Any]]:
 
 		if len(data_list) >= num_limit_samples:
-			return data_list[:num_limit_samples]
+			return random.sample(data_list, num_limit_samples)
 		else:
 			ratio = num_limit_samples//len(data_list) + 1
 			data_list = data_list*ratio
@@ -264,7 +264,6 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 						for file_name_pair \
 						in itertools.combinations(anchor_imgs_path,2)
 					]
-		positives = random.sample(positives, k = self.return_examples)
 		
 		neg_img_list = []
 		for other_user_idx in other_dir_idx_list:
