@@ -205,7 +205,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 									k = number_celeb_in_train)
 
 			with open('dataset.json', "w") as f:
-				json.dump([{ith:ele} for ith, ele in enumerate(glob_iter)], indent = 4)
+				json.dump([{ith:ele} for ith, ele in enumerate(glob_iter)], f, indent = 4)
 
 		else:
 			glob_iter = glob.glob("*_*",root_dir = f"{data_folder_path}") # + \
