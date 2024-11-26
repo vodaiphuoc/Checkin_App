@@ -1,3 +1,7 @@
+"""
+This module use DDP rather than FSDP
+"""
+
 import torch
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import MultiStepLR
@@ -104,19 +108,12 @@ class FineTuner(object):
 		torch.cuda.set_device(rank)
 		
 		model = model.to(rank)
+		ddp_model = DDP(model, device_ids=[rank])
 		
-		model = torch.compile(model,
+		self.model = torch.compile(ddp_model,
 						mode="reduce-overhead",
-						options = {'triton.cudagraphs': True}, 
+						# options = {'triton.cudagraphs': True}, 
 						fullgraph = False)
-
-		self.model = FSDP(model, 
-						use_orig_params = True, 
-						auto_wrap_policy= my_auto_wrap_policy,
-						device_id=torch.cuda.current_device(),
-						backward_prefetch = BackwardPrefetch.BACKWARD_PRE
-						)
-		
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
 		local_loader_args_dict['rank'] = rank
