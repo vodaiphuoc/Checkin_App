@@ -80,7 +80,7 @@ class FineTuner(object):
 
 		my_auto_wrap_policy = functools.partial(
         							size_based_auto_wrap_policy, 
-        							min_num_params=10000)
+        							min_num_params=15000)
 
 		model = InceptionResnetV1(pretrained = 'casia-webface', 
 								classify=False,
@@ -127,7 +127,13 @@ class FineTuner(object):
 		# 					swap=False,
 		# 					reduction='mean')
 
-		self.loss_fn = CustomeTripletLoss(margin = 1.0, device = rank)
+		loss_fn = CustomeTripletLoss(margin = 1.0, 
+			device = rank, 
+			batch_size = batch_size, 
+			return_examples = return_examples,
+			p_n_ratio = p_n_ratio
+			)
+		self.loss_fn = torch.compile(loss_fn.to(rank))
 	
 	@staticmethod
 	def _make_loaders(is_train:bool,
@@ -201,10 +207,6 @@ class FineTuner(object):
 			a_embeddings = embeddings[0: self.master_batch_size,:]
 			p_embeddings = embeddings[self.master_batch_size: 2*self.master_batch_size,:]
 			n_embeddings = embeddings[2*self.master_batch_size:,:]
-
-			a_embeddings = a_embeddings.reshape(batch_size, a_N, 512)
-			p_embeddings = p_embeddings.reshape(batch_size, p_N, 512)
-			n_embeddings = n_embeddings.reshape(batch_size, n_N, 512)
 
 			loss = self.loss_fn(a_embeddings, p_embeddings, n_embeddings)
 

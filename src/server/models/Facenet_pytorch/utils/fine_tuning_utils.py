@@ -321,9 +321,19 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 
 
 class CustomeTripletLoss(torch.nn.Module):
-	def __init__(self, device: Union[int, torch.device], margin:int = 0.9):
+	def __init__(self, 
+		device: Union[int, torch.device], 
+		margin:int = 0.9, 
+		batch_size:int = 2, 
+		return_examples:int = 80,
+		p_n_ratio:int = 4
+		)->None:
 		super(CustomeTripletLoss, self).__init__()
 		self.margin = torch.tensor(margin, dtype = torch.float32).to(device)
+		self.zero = torch.zeros(sim_a_p.shape, dtype = torch.float32).to(device)
+		self.batch_size = batch_size
+		self.return_examples = return_examples
+		self.p_n_ratio = p_n_ratio
 		return None
 
 	
@@ -342,17 +352,22 @@ class CustomeTripletLoss(torch.nn.Module):
 	def forward(self, 
 				a_embeddings: torch.Tensor, 
 				p_embeddings: torch.Tensor, 
-				n_embeddings: torch.Tensor
+				n_embeddings: torch.Tensor,
+				batch_size:int,
 				)->torch.Tensor:
 		"""
 		Parameters:
-			a_embeddings: torch.Tensor shape (batch, return_examples, embedding_size (e.g 512) )
-			p_embeddings: torch.Tensor shape (batch, return_examples, embedding_size (e.g 512) )
-			n_embeddings: torch.Tensor shape (batch, return_examples, embedding_size (e.g 512) )
+			a_embeddings: torch.Tensor shape (self.return_examples, embedding_size (e.g 512) )
+			p_embeddings: torch.Tensor shape (self.return_examples, embedding_size (e.g 512) )
+			n_embeddings: torch.Tensor shape (self.return_examples*self.p_n_ratio, embedding_size (e.g 512) )
 		
 		"""
+		a_embeddings = a_embeddings.reshape(self.batch_size, self.return_examples, 512)
+		p_embeddings = p_embeddings.reshape(self.batch_size, self.return_examples, 512)
+		n_embeddings = n_embeddings.reshape(self.batch_size, self.return_examples*self.p_n_ratio, 512)
+
 		sim_a_p = self.get_cosim(a_embeddings, p_embeddings)
 		sim_a_n = self.get_cosim(a_embeddings, n_embeddings)
 
 		tripletloss = sim_a_p - sim_a_n + self.margin
-		return torch.mean(torch.max(tripletloss,torch.zeros(sim_a_p.shape).to(a_embeddings.device)))
+		return torch.mean(torch.max(tripletloss,self.zero))
