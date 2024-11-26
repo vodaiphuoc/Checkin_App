@@ -167,6 +167,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 				return_examples:str = 512,
 				data_folder_path:str = 'face_dataset\\faces_only', 
 				number_other_users:int = 3,
+				p_n_ratio = 4,
 				number_celeb_in_train:int = 500,
 				number_celeb_in_val:int = 150
 				)->None:
@@ -183,6 +184,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 											)
 		self.data_folder_path = data_folder_path
 		self.return_examples = return_examples
+		self.p_n_ratio = p_n_ratio
 
 		return None
 
@@ -277,7 +279,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 													k = len(self.user2img_path[other_user_idx])//5)
 									])
 		return (TripLetDataset_V2._adjust2fixe_size(positives, self.return_examples),
-				TripLetDataset_V2._adjust2fixe_size(neg_img_list, self.return_examples*4)
+				TripLetDataset_V2._adjust2fixe_size(neg_img_list, self.return_examples*self.p_n_ratio)
 				)
 
 	def _paths2tensor(self, path_list: List[str])->torch.Tensor:

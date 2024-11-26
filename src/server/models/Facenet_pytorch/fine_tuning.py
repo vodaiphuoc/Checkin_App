@@ -55,6 +55,7 @@ class FineTuner(object):
 				return_examples:int = 512,
 				data_folder_path:str = 'face_dataset/faces_only',
 				number_other_users:float = 0.2,
+				p_n_ratio:int = 4,
 				number_celeb_in_train:int = 500,
 				number_celeb_in_val:int = 150,
 				batch_size:int = 64,
@@ -69,6 +70,7 @@ class FineTuner(object):
 			'return_examples': return_examples,
 			'data_folder_path': data_folder_path,
 			'number_other_users': number_other_users,
+			'p_n_ratio': p_n_ratio,
 			'number_celeb_in_train': number_celeb_in_train,
 			'number_celeb_in_val': number_celeb_in_val,
 			'batch_size': batch_size,
@@ -134,6 +136,7 @@ class FineTuner(object):
 					return_examples:int,
 					data_folder_path:str,
 					number_other_users:float,
+					p_n_ratio: int,
 					number_celeb_in_train:int,
 					number_celeb_in_val:int,
 					batch_size:int,
@@ -143,6 +146,7 @@ class FineTuner(object):
 								is_train = is_train,
 								data_folder_path = data_folder_path,
 								number_other_users = number_other_users,
+								p_n_ratio = p_n_ratio,
 								number_celeb_in_train = number_celeb_in_train,
 								number_celeb_in_val = number_celeb_in_val
 		)
@@ -169,7 +173,10 @@ class FineTuner(object):
 								)->torch.Tensor:
 
 		return torch.cat([ batch.reshape((self.master_batch_size, 3, 160, 160)) 
-							for batch in list_batch
+							if ith != len(list_batch)
+							else
+							batch.reshape((self.master_batch_size*self.p_n_ratio, 3, 160, 160)) 
+							for ith, batch in enumerate(list_batch)
 						],
 						dim = 0
 						).to(rank)
