@@ -273,14 +273,14 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 		
 		neg_img_list = []
 		for other_user_idx in other_dir_idx_list:
-			if len(neg_img_list) > int(self.return_examples//len(positives)):
+			if len(neg_img_list) > int(self.p_n_ratio//len(positives)):
 				break
 			else:
 				neg_img_list.extend([
 										{other_user_idx: img_file_name} 
 										for img_file_name in 
 										random.sample(self.user2img_path[other_user_idx], 
-													k = len(self.user2img_path[other_user_idx])//5)
+													k = len(self.user2img_path[other_user_idx])//2)
 									])
 		return (TripLetDataset_V2._adjust2fixe_size(positives, self.return_examples),
 				TripLetDataset_V2._adjust2fixe_size(neg_img_list, self.return_examples*self.p_n_ratio)
