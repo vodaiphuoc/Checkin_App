@@ -353,7 +353,6 @@ class CustomeTripletLoss(torch.nn.Module):
 				a_embeddings: torch.Tensor, 
 				p_embeddings: torch.Tensor, 
 				n_embeddings: torch.Tensor,
-				batch_size:int,
 				)->torch.Tensor:
 		"""
 		Parameters:
