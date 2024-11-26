@@ -80,7 +80,7 @@ class FineTuner(object):
 
 		my_auto_wrap_policy = functools.partial(
         							size_based_auto_wrap_policy, 
-        							min_num_params=15000)
+        							min_num_params=25000)
 
 		model = InceptionResnetV1(pretrained = 'casia-webface', 
 								classify=False,
@@ -196,13 +196,6 @@ class FineTuner(object):
 		for batch_idx, (a_batch, p_batch, n_batch) in tqdm(enumerate(self.train_loader),
 															total = len(self.train_loader)):
 
-			batch_size = a_batch.shape[0]
-			a_N = a_batch.shape[1]
-			p_N = p_batch.shape[1]
-			n_N = n_batch.shape[1]
-
-			# print(a_batch.shape)
-			# print(n_batch.shape)
 			model_inputs = self._pre_process_batch_data([a_batch, p_batch, n_batch], rank)
 			embeddings = self.model(model_inputs)
 
