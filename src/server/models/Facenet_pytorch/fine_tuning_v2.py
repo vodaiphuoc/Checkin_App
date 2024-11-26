@@ -106,7 +106,7 @@ class FineTuner(object):
 		model = model.to(rank)
 		
 		model = torch.compile(model,
-						# mode="reduce-overhead",
+						mode="reduce-overhead",
 						options = {'triton.cudagraphs': True}, 
 						fullgraph = False)
 
