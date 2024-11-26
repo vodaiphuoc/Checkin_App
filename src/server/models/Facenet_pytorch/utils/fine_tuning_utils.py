@@ -264,6 +264,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 						for file_name_pair \
 						in itertools.combinations(anchor_imgs_path,2)
 					]
+		positives = random.sample(positives, k = self.return_examples)
 		
 		neg_img_list = []
 		for other_user_idx in other_dir_idx_list:
@@ -277,7 +278,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 													k = len(self.user2img_path[other_user_idx])//5)
 									])
 		return (TripLetDataset_V2._adjust2fixe_size(positives, self.return_examples),
-				TripLetDataset_V2._adjust2fixe_size(neg_img_list, self.return_examples)
+				TripLetDataset_V2._adjust2fixe_size(neg_img_list, self.return_examples*4)
 				)
 
 	def _paths2tensor(self, path_list: List[str])->torch.Tensor:

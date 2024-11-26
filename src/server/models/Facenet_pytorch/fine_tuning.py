@@ -54,7 +54,7 @@ class FineTuner(object):
 				pretrained_weight_dir: str = 'src\\server\\models\\pretrained_weights\\Facenet_pytorch',
 				return_examples:int = 512,
 				data_folder_path:str = 'face_dataset/faces_only',
-				ratio_other_user:float = 0.2,
+				number_other_users:float = 0.2,
 				number_celeb_in_train:int = 500,
 				number_celeb_in_val:int = 150,
 				batch_size:int = 64,
@@ -68,7 +68,7 @@ class FineTuner(object):
 		self.loader_args_dict = {
 			'return_examples': return_examples,
 			'data_folder_path': data_folder_path,
-			'ratio_other_user': ratio_other_user,
+			'number_other_users': number_other_users,
 			'number_celeb_in_train': number_celeb_in_train,
 			'number_celeb_in_val': number_celeb_in_val,
 			'batch_size': batch_size,
@@ -77,7 +77,7 @@ class FineTuner(object):
 
 		my_auto_wrap_policy = functools.partial(
         							size_based_auto_wrap_policy, 
-        							min_num_params=20000)
+        							min_num_params=10000)
 
 		model = InceptionResnetV1(pretrained = 'casia-webface', 
 								classify=False,
@@ -101,7 +101,12 @@ class FineTuner(object):
 		torch.cuda.set_device(rank)
 		
 		model = model.to(rank)
-		fsdp_model = FSDP(model, use_orig_params = True, auto_wrap_policy= my_auto_wrap_policy)
+		fsdp_model = FSDP(model, 
+						use_orig_params = True, 
+						auto_wrap_policy= my_auto_wrap_policy,
+						device_id=torch.cuda.current_device(),
+						backward_prefetch = BackwardPrefetch.BACKWARD_PRE
+						)
 		self.model = torch.compile(fsdp_model.to(rank))
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
@@ -128,7 +133,7 @@ class FineTuner(object):
 					world_size:int,
 					return_examples:int,
 					data_folder_path:str,
-					ratio_other_user:float,
+					number_other_users:float,
 					number_celeb_in_train:int,
 					number_celeb_in_val:int,
 					batch_size:int,
@@ -137,7 +142,7 @@ class FineTuner(object):
 		dataset = TripLetDataset_V2(return_examples = return_examples,
 								is_train = is_train,
 								data_folder_path = data_folder_path,
-								number_other_users = ratio_other_user,
+								number_other_users = number_other_users,
 								number_celeb_in_train = number_celeb_in_train,
 								number_celeb_in_val = number_celeb_in_val
 		)
