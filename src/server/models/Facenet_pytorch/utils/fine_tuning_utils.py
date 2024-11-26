@@ -223,7 +223,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 						'other_dir_idx_list': [_i for _i in range(_i, _i+number_other_users)]
 					}
 					for _i in range(0, len(glob_iter), number_other_users)
-					if _i + 2 < len(glob_iter)-1 and \
+					if _i + number_other_users < len(glob_iter)-1 and \
 						not (i >= _i and i < _i+number_other_users)
 			]
 			userIdx2other_usersIdx.extend(relations)
@@ -249,9 +249,10 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 						)-> List[Dict[str,Any]]:
 
 		if len(data_list) >= num_limit_samples:
-			logging.info('Trimming...')
+			# logging.info(f'Trimming...{len(data_list)},{num_limit_samples}')
 			return random.sample(data_list, k = num_limit_samples)
 		else:
+			# logging.info(f'Append...{len(data_list)}')
 			ratio = num_limit_samples//len(data_list) + 1
 			data_list = data_list*ratio
 			return data_list[:num_limit_samples]
@@ -275,14 +276,14 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 		
 		neg_img_list = []
 		for other_user_idx in other_dir_idx_list:
-			if len(neg_img_list) > int(self.p_n_ratio//self.return_examples)+1:
+			if len(neg_img_list) > int(self.p_n_ratio*self.return_examples)+1:
 				break
 			else:
 				neg_img_list.extend([
 										{other_user_idx: img_file_name} 
 										for img_file_name in 
 										random.sample(self.user2img_path[other_user_idx], 
-													k = len(self.user2img_path[other_user_idx])//5)
+													k = len(self.user2img_path[other_user_idx])//2)
 									])
 		return (TripLetDataset_V2._adjust2fixe_size(positives, self.return_examples),
 				TripLetDataset_V2._adjust2fixe_size(neg_img_list, self.return_examples*self.p_n_ratio)
