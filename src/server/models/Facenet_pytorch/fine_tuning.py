@@ -173,7 +173,7 @@ class FineTuner(object):
 								)->torch.Tensor:
 
 		return torch.cat([ batch.reshape((self.master_batch_size, 3, 160, 160)) 
-							if ith != len(list_batch)
+							if ith != len(list_batch)-1
 							else
 							batch.reshape((self.master_batch_size*self.p_n_ratio, 3, 160, 160)) 
 							for ith, batch in enumerate(list_batch)
