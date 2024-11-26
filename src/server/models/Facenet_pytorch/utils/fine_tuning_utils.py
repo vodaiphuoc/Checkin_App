@@ -244,7 +244,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 						)-> List[Dict[str,Any]]:
 
 		if len(data_list) >= num_limit_samples:
-			return random.sample(data_list, num_limit_samples)
+			return random.sample(data_list, k = num_limit_samples)
 		else:
 			ratio = num_limit_samples//len(data_list) + 1
 			data_list = data_list*ratio

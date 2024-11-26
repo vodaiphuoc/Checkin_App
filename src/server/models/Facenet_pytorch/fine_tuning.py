@@ -193,6 +193,8 @@ class FineTuner(object):
 			p_N = p_batch.shape[1]
 			n_N = n_batch.shape[1]
 
+			print(a_batch.shape)
+			print(n_batch.shape)
 			model_inputs = self._pre_process_batch_data([a_batch, p_batch, n_batch], rank)
 			embeddings = self.model(model_inputs)
 
