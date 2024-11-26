@@ -6,6 +6,7 @@ import random
 from tqdm import tqdm
 import cv2 as cv
 import json
+import logging
 from src.server.models.Facenet_pytorch.mtcnn import fixed_image_standardization
 
 
@@ -185,7 +186,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 		self.data_folder_path = data_folder_path
 		self.return_examples = return_examples
 		self.p_n_ratio = p_n_ratio
-
+		logging.basicConfig(level=logging.INFO)
 		return None
 
 	@staticmethod
@@ -248,7 +249,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 						)-> List[Dict[str,Any]]:
 
 		if len(data_list) >= num_limit_samples:
-			print("trimming...")
+			logging.info('Trimming...')
 			return random.sample(data_list, k = num_limit_samples)
 		else:
 			ratio = num_limit_samples//len(data_list) + 1
@@ -281,7 +282,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 										{other_user_idx: img_file_name} 
 										for img_file_name in 
 										random.sample(self.user2img_path[other_user_idx], 
-													k = len(self.user2img_path[other_user_idx])//4)
+													k = len(self.user2img_path[other_user_idx])//5)
 									])
 		return (TripLetDataset_V2._adjust2fixe_size(positives, self.return_examples),
 				TripLetDataset_V2._adjust2fixe_size(neg_img_list, self.return_examples*self.p_n_ratio)
