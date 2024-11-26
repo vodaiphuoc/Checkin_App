@@ -112,8 +112,7 @@ class FineTuner(object):
 		
 		self.model = torch.compile(ddp_model,
 						mode="reduce-overhead",
-						# options = {'triton.cudagraphs': True}, 
-						fullgraph = True)
+						fullgraph = False)
 
 		local_loader_args_dict = deepcopy(self.loader_args_dict)
 		local_loader_args_dict['rank'] = rank

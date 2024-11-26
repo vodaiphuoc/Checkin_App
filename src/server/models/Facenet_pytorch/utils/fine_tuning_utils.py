@@ -273,7 +273,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 		
 		neg_img_list = []
 		for other_user_idx in other_dir_idx_list:
-			if len(neg_img_list) > int(self.p_n_ratio//len(positives)):
+			if len(neg_img_list) > int(self.p_n_ratio//len(positives))+1:
 				break
 			else:
 				neg_img_list.extend([
