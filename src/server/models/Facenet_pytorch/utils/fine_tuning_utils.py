@@ -248,6 +248,7 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 						)-> List[Dict[str,Any]]:
 
 		if len(data_list) >= num_limit_samples:
+			print("trimming...")
 			return random.sample(data_list, k = num_limit_samples)
 		else:
 			ratio = num_limit_samples//len(data_list) + 1
@@ -273,14 +274,14 @@ class TripLetDataset_V2(torch.utils.data.Dataset):
 		
 		neg_img_list = []
 		for other_user_idx in other_dir_idx_list:
-			if len(neg_img_list) > int(self.p_n_ratio//len(positives))+1:
+			if len(neg_img_list) > int(self.p_n_ratio//self.return_examples)+1:
 				break
 			else:
 				neg_img_list.extend([
 										{other_user_idx: img_file_name} 
 										for img_file_name in 
 										random.sample(self.user2img_path[other_user_idx], 
-													k = len(self.user2img_path[other_user_idx])//2)
+													k = len(self.user2img_path[other_user_idx])//4)
 									])
 		return (TripLetDataset_V2._adjust2fixe_size(positives, self.return_examples),
 				TripLetDataset_V2._adjust2fixe_size(neg_img_list, self.return_examples*self.p_n_ratio)
