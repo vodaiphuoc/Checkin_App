@@ -133,7 +133,9 @@ class FineTuner(object):
 			return_examples = return_examples,
 			p_n_ratio = p_n_ratio
 			)
-		self.loss_fn = torch.compile(loss_fn.to(rank))
+		self.loss_fn = torch.compile(loss_fn.to(rank), 
+			options = {'triton.cudagraphs': True}, 
+			fullgraph = True)
 	
 	@staticmethod
 	def _make_loaders(is_train:bool,

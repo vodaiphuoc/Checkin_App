@@ -369,4 +369,4 @@ class CustomeTripletLoss(torch.nn.Module):
 		sim_a_n = self.get_cosim(a_embeddings, n_embeddings)
 
 		tripletloss = sim_a_p - sim_a_n + self.margin
-		return torch.mean(torch.max(tripletloss,self.zero))
+		return torch.sum(torch.max(tripletloss,self.zero))
