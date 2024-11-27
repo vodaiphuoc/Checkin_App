@@ -147,13 +147,13 @@ class Test_Embeddings(object):
 				result_user_embeddings = self._run_single_user(user_name = user_name, 
 													return_embedding_as_matrix = not return_embedding_as_matrix)
 
-				num_embeddings = len(result_user_embeddings['embeddings'])
-				step = int(num_embeddings)//3
+				# num_embeddings = len(result_user_embeddings['embeddings'])
+				# step = int(num_embeddings)//3
 				predict_name_list = []
-				for embedd_idx in range(0, num_embeddings, step):
-					query_embeddings = result_user_embeddings['embeddings'][embedd_idx: embedd_idx+step,:]
-					pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = query_embeddings)
-					predict_name_list.append(pred_name)
+				# for embedd_idx in range(0, num_embeddings, step):
+					# query_embeddings = result_user_embeddings['embeddings'][embedd_idx: embedd_idx+step,:]
+				pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = result_user_embeddings['embeddings'])
+				predict_name_list.append(pred_name)
 
 				result[user_name] = predict_name_list
 			print(result)
