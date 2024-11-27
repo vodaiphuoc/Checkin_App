@@ -85,7 +85,7 @@ class Test_Embeddings(object):
 		
 		if self.users_from_json:
 			assert self.json_path is not None
-			with open('face_dataset\\dataset.json','r') as f:
+			with open(self.json_path,'r') as f:
 				user_folders_list = json.load(f)
 
 				self.user_folders = [self.data_folder_path +'/'+ list(ele.values())[0] 
