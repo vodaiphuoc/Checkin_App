@@ -145,7 +145,7 @@ class Test_Embeddings(object):
 			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
 				user_name = os.path.split(main_user_dir)[-1].split('.')[0]
 				embeddings = self._run_single_user(user_name = user_name, 
-													return_embedding_only = False)
+													return_embedding_as_matrix = return_embedding_as_matrix)
 
 				num_embeddings = embeddings.shape[0]
 				step = int(num_embeddings)//3
