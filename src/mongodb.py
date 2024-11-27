@@ -195,7 +195,7 @@ class Mongo_Handler(object):
 
     def searchUserWithEmbeddings(self, 
                                  batch_query_embeddings: np.ndarray, 
-                                 limit_return:int = 3
+                                 limit_return:int = 1
                                  )->str:
         """
         batch_query_embeddings: np.ndarray shape (batch, 128) or (batch, 512)
@@ -204,36 +204,38 @@ class Mongo_Handler(object):
         collection = database["Infor"]
         all_docs = collection.count_documents(filter={})
         
-        batch_results = [
+        batch_results = {
             # run each pipeline
-            [(item['_id'], ith+1, item['maxScore']) for ith, item in
-            enumerate(list(collection.aggregate(Mongo_Handler._adjust_pipeline(
+            ith: [{'name':item['_id'],'score':item['maxScore']} for item in
+            list(collection.aggregate(Mongo_Handler._adjust_pipeline(
                                                         query_embedding= query_embedding, 
                                                         num_all_docs = all_docs,
                                                         limit_return = limit_return)
                                                 )
-                    ))
-            ]
-            for query_embedding in batch_query_embeddings
-        ]
+                    )
+            ][0]
+            for ith, query_embedding in enumerate(batch_query_embeddings)
+        }
         
-        # print('batch_results: ',batch_results)
+        
         # ranking
-        candidate_users = {ele[0]:[] for _round in batch_results for ele in _round}
+        # candidate_users = {ele[0]:[] for _round in batch_results for ele in _round}
         
-        for batch in batch_results:
-            for user, rank, _ in batch:
-                candidate_users[user].append(rank)
+        # for batch in batch_results:
+        #     for user, rank, _ in batch:
+        #         candidate_users[user].append(rank)
         
-        # mean ranking
-        candidate_users = {k: sum(v)/limit_return for k,v in candidate_users.items()}
+        # # mean ranking
+        # candidate_users = {k: sum(v)/limit_return for k,v in candidate_users.items()}
 
-        # sort ranking score in ascending order
+        candidate_names = {k:v['name'] for k,v in batch_results.items()}
+        candidate_scores = {k:v['score'] for k,v in batch_results.items()}
+        # # sort ranking score in ascending order
         sorted_candidate_users = {k:v for k,v in 
-                                  sorted(candidate_users.items(), key=lambda item: item[1])
+                                  sorted(candidate_scores.items(), key=lambda item: item[1])
                                   }
-        
-        return list(sorted_candidate_users.keys())[-1]
+        result_index = list(sorted_candidate_users.keys())[-1]
+        return candidate_names[result_index]
     
     # for cookie processing
     def insertCookie(self,
