@@ -144,14 +144,15 @@ class Test_Embeddings(object):
 			result = {}
 			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
 				user_name = os.path.split(main_user_dir)[-1].split('.')[0]
-				embeddings = self._run_single_user(user_name = user_name, 
+				result_user_embeddings = self._run_single_user(user_name = user_name, 
 													return_embedding_as_matrix = not return_embedding_as_matrix)
 
-				num_embeddings = len(embeddings)
+				num_embeddings = len(result_user_embeddings)
+				assert num_embeddings != 0, f"main_user_dir"
 				step = int(num_embeddings)//3
 				predict_name_list = []
 				for embedd_idx in range(0, num_embeddings, step):
-					query_embeddings = embeddings[embedd_idx: embedd_idx+step,:]
+					query_embeddings = result_user_embeddings['embeddings'][embedd_idx: embedd_idx+step,:]
 					pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = query_embeddings)
 					predict_name_list.append(pred_name)
 
