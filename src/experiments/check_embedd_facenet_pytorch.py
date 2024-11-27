@@ -25,15 +25,14 @@ import uuid
 from tqdm import tqdm
 import re
 import os
+import json
 
 class Test_Embeddings(object):
 	def __init__(self,
-				data_folder_path: str, 
+				data_folder_path: str,
 				pretrained_weight_dir: str,
 				model_string: Literal['casia-webface','fine_tuning'],
-				# p_state_dict_path: str,
-                # r_state_dict_path: str,
-                # o_state_dict_path: str,
+				users_from_json: bool = False,
 				):
 		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 		self.recognition_model = InceptionResnetV1(pretrained = model_string, 
@@ -43,7 +42,9 @@ class Test_Embeddings(object):
 													device=self.device,
 													pretrained_weight_dir = pretrained_weight_dir
 	    									)
+		self.recognition_model.eval()
 		self.data_folder_path = data_folder_path
+		self.users_from_json = users_from_json
 
 	def _run_single_user(self, 
 				user_name:str, 
@@ -79,10 +80,21 @@ class Test_Embeddings(object):
 			return user_init_data
 
 	def _get_total_init_user_data(self, return_embedding_as_matrix:bool):
-		user_folders = glob.glob(f"{self.data_folder_path}/*")
+		
+		if self.users_from_json:
+			with open('face_dataset\\dataset.json','r') as f:
+				user_folders_list = json.load(f)
+
+				self.user_folders = [self.data_folder_path +'/'+ list(ele.values())[0] 
+										for ele in user_folders_list
+										# if '_' in list(ele.values())[0]
+										]
+		else:
+			self.user_folders = glob.glob(f"{self.data_folder_path}/*")
+
 		master_init_data = []
 
-		for user_folder in tqdm(user_folders, total = len(user_folders)):
+		for user_folder in tqdm(self.user_folders, total = len(self.user_folders)):
 			user_name = os.path.split(user_folder)[-1].split('.')[0]
 			user_init_data = self._run_single_user(user_name = user_name, 
 								return_embedding_as_matrix = return_embedding_as_matrix)
@@ -96,6 +108,7 @@ class Test_Embeddings(object):
 
 	@staticmethod
 	def get_cosim(input1:torch.Tensor, input2:torch.Tensor)->float:
+		input2 = torch.cat([input2, input2, input2, input2, input2],dim = 0)
 		norm_1 = torch.unsqueeze(torch.norm(input1, dim =1), dim = 1) 
 		norm_2 = torch.unsqueeze(torch.norm(input2, dim =1), dim = 0)
 		length_mul_matrix = 1/torch.mul(norm_1, norm_2)
@@ -104,12 +117,12 @@ class Test_Embeddings(object):
 
 		dot_product_score = torch.mul(dot_product, length_mul_matrix)
 
-		return torch.mean(dot_product_score).item()
+		return torch.max(dot_product_score).item()
 
 
 	def pipelines(self, 
 				run_init_push: bool, 
-				evaluation: bool, 
+				evaluation: bool,
 				return_embedding_as_matrix: bool
 				):
 		master_config = get_program_config()
@@ -153,7 +166,7 @@ class Test_Embeddings(object):
 																	user_embeddings_dict['embeddings'])
 					for user_dict in master_init_data
 				}
-
+				print(user_name, score_dict, '\n')
 				sorted_score_dict = {k:v for k,v in \
 									sorted(score_dict.items(), key=lambda item: item[1])
 									}

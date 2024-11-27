@@ -1,7 +1,7 @@
 import os
 import requests
 from requests.adapters import HTTPAdapter
-
+from collections import OrderedDict
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -337,10 +337,20 @@ def load_weights(mdl, name, pretrained_weight_dir, device):
     # cached_file = os.path.join(model_dir, os.path.basename(path))
     # if not os.path.exists(cached_file):
     #     download_url_to_file(path, cached_file)
-    if isinstance(device, int):
-        state_dict = torch.load(_path, weights_only = True)
-    else:    
-        state_dict = torch.load(_path, weights_only = True)
+    
+    load_state_dict = torch.load(_path, 
+        weights_only = True, 
+        map_location= torch.device('cpu')
+        )
+    
+    if name == 'fine_tuning':
+        state_dict = OrderedDict()
+        for k, v in load_state_dict.items():
+            new_k = k.replace('_orig_mod.module.','')
+            state_dict[new_k] = v
+    else:
+        state_dict = load_state_dict
+
     mdl.load_state_dict(state_dict)
 
 def get_torch_home():
