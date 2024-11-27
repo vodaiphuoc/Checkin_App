@@ -104,7 +104,7 @@ class TripLetDataset(torch.utils.data.Dataset):
 									{other_user_idx: img_file_name} 
 									for img_file_name in 
 									random.sample(self.user2img_path[other_user_idx], 
-													k = len(self.user2img_path[other_user_idx])//5)
+													k = len(self.user2img_path[other_user_idx])//2)
 									])
 		
 		# merge dict from itertool.product
