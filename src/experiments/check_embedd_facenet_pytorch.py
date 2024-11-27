@@ -129,13 +129,13 @@ class Test_Embeddings(object):
 				return_embedding_as_matrix: bool
 				):
 		master_config = get_program_config()
-		master_init_data = self._get_total_init_user_data(return_embedding_as_matrix = return_embedding_as_matrix)
-		print('number init data: ',len(master_init_data))
+		# master_init_data = self._get_total_init_user_data(return_embedding_as_matrix = return_embedding_as_matrix)
+		# print('number init data: ',len(master_init_data))
 
-		if run_init_push and not return_embedding_as_matrix:
-			db_engine = Mongo_Handler(master_config= master_config,
-						ini_push= True,
-						init_data= master_init_data)
+		# if run_init_push and not return_embedding_as_matrix:
+		# 	db_engine = Mongo_Handler(master_config= master_config,
+		# 				ini_push= True,
+		# 				init_data= master_init_data)
 		
 		if evaluation:
 			db_engine = Mongo_Handler(master_config= master_config,
@@ -147,16 +147,15 @@ class Test_Embeddings(object):
 				result_user_embeddings = self._run_single_user(user_name = user_name, 
 													return_embedding_as_matrix = not return_embedding_as_matrix)
 
-				num_embeddings = len(result_user_embeddings)
-				assert num_embeddings != 0, f"main_user_dir"
+				num_embeddings = len(result_user_embeddings['embeddings'])
 				step = int(num_embeddings)//3
 				predict_name_list = []
 				for embedd_idx in range(0, num_embeddings, step):
 					query_embeddings = result_user_embeddings['embeddings'][embedd_idx: embedd_idx+step,:]
-					pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = query_embeddings)
-					predict_name_list.append(pred_name)
+					# pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = query_embeddings)
+					# predict_name_list.append(pred_name)
 
-				result[user_name] = predict_name_list
+				# result[user_name] = predict_name_list
 			print(result)
 
 			# result = {}
