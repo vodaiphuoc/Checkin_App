@@ -32,6 +32,7 @@ class Test_Embeddings(object):
 				data_folder_path: str,
 				pretrained_weight_dir: str,
 				model_string: Literal['casia-webface','fine_tuning'],
+				json_path:str = None,
 				users_from_json: bool = False,
 				):
 		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -45,6 +46,7 @@ class Test_Embeddings(object):
 		self.recognition_model.eval()
 		self.data_folder_path = data_folder_path
 		self.users_from_json = users_from_json
+		self.json_path = json_path
 
 	def _run_single_user(self, 
 				user_name:str, 
@@ -82,6 +84,7 @@ class Test_Embeddings(object):
 	def _get_total_init_user_data(self, return_embedding_as_matrix:bool):
 		
 		if self.users_from_json:
+			assert self.json_path is not None
 			with open('face_dataset\\dataset.json','r') as f:
 				user_folders_list = json.load(f)
 
