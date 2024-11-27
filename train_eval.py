@@ -12,7 +12,7 @@ if __name__ == '__main__':
 					model_string = 'fine_tuning'
 				).pipelines(run_init_push = True, 
 				evaluation = True, 
-				return_embedding_as_matrix = True)
+				return_embedding_as_matrix = False)
 
 	# path = 'src\\server\\models\\pretrained_weights\\Facenet_pytorch\\20180408-102900-casia-webface.pt'
 	# fine_tuning_path = 'src\\server\\models\\pretrained_weights\\Facenet_pytorch\\fine_tuning.pt'

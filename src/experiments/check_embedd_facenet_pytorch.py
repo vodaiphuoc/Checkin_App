@@ -41,7 +41,7 @@ class Test_Embeddings(object):
 													dropout_prob=0.6,
 													device=self.device,
 													pretrained_weight_dir = pretrained_weight_dir
-	    									)
+	    									).to(self.device)
 		self.recognition_model.eval()
 		self.data_folder_path = data_folder_path
 		self.users_from_json = users_from_json
@@ -135,41 +135,41 @@ class Test_Embeddings(object):
 						init_data= master_init_data)
 		
 		if evaluation:
-			# db_engine = Mongo_Handler(master_config= master_config,
-			# 			ini_push= False)
+			db_engine = Mongo_Handler(master_config= master_config,
+						ini_push= False)
 			
-			# result = {}
-			# for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
-			# 	user_name = os.path.split(main_user_dir)[-1].split('.')[0]
-			# 	embeddings = self._run_single_user(user_name = user_name, 
-			# 										return_embedding_only = True)
-
-			# 	num_embeddings = embeddings.shape[0]
-			# 	step = int(num_embeddings)//3
-			# 	predict_name_list = []
-			# 	for embedd_idx in range(0, num_embeddings, step):
-			# 		query_embeddings = embeddings[embedd_idx: embedd_idx+step,:]
-			# 		pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = query_embeddings)
-			# 		predict_name_list.append(pred_name)
-
-			# 	result[user_name] = predict_name_list
-			# print(result)
-
 			result = {}
 			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
 				user_name = os.path.split(main_user_dir)[-1].split('.')[0]
-				user_embeddings_dict = self._run_single_user(user_name = user_name, 
-															return_embedding_as_matrix = True)
-				
-				score_dict = {
-					user_dict['user_name']: Test_Embeddings.get_cosim(user_dict['embeddings'], 
-																	user_embeddings_dict['embeddings'])
-					for user_dict in master_init_data
-				}
-				print(user_name, score_dict, '\n')
-				sorted_score_dict = {k:v for k,v in \
-									sorted(score_dict.items(), key=lambda item: item[1])
-									}
-				result[user_name] = list(sorted_score_dict.keys())[-1]
+				embeddings = self._run_single_user(user_name = user_name, 
+													return_embedding_only = False)
 
+				num_embeddings = embeddings.shape[0]
+				step = int(num_embeddings)//3
+				predict_name_list = []
+				for embedd_idx in range(0, num_embeddings, step):
+					query_embeddings = embeddings[embedd_idx: embedd_idx+step,:]
+					pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = query_embeddings)
+					predict_name_list.append(pred_name)
+
+				result[user_name] = predict_name_list
 			print(result)
+
+			# result = {}
+			# for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
+			# 	user_name = os.path.split(main_user_dir)[-1].split('.')[0]
+			# 	user_embeddings_dict = self._run_single_user(user_name = user_name, 
+			# 												return_embedding_as_matrix = True)
+				
+			# 	score_dict = {
+			# 		user_dict['user_name']: Test_Embeddings.get_cosim(user_dict['embeddings'], 
+			# 														user_embeddings_dict['embeddings'])
+			# 		for user_dict in master_init_data
+			# 	}
+			# 	print(user_name, score_dict, '\n')
+			# 	sorted_score_dict = {k:v for k,v in \
+			# 						sorted(score_dict.items(), key=lambda item: item[1])
+			# 						}
+			# 	result[user_name] = list(sorted_score_dict.keys())[-1]
+
+			# print(result)
