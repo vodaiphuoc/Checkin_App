@@ -29,7 +29,7 @@ import json
 import time
 
 
-@torch.compile(fullgraph = True)
+@torch.compile(fullgraph = True, dynamic = False, mode = 'reduce-overhead')
 def get_cosim(input1:torch.Tensor, input2:torch.Tensor)->float:
 	"""
 	input1,input2: torch.Tensor shape (B_{i}, 512)
@@ -68,8 +68,7 @@ class Test_Embeddings(object):
 		self.json_path = json_path
 
 	def _run_single_user(self, 
-				user_name:str, 
-				return_embedding_as_matrix: bool = False
+				user_name:str,
 				):
 		user_imgs = []
 		for path in glob.glob(f"{self.data_folder_path}/{user_name}/*"):
@@ -85,32 +84,22 @@ class Test_Embeddings(object):
 			embeddings = self.recognition_model(stack_faces)
 		# assert embeddings.shape[0] == len(filtered_faces)
 		assert embeddings.shape[1] == 512
+	
+		return {'user_name': user_name,
+				'password': '12345',
+				'embeddings': embeddings
+				}
 
-		if return_embedding_as_matrix:
-			return {'user_name': user_name,
-					'embeddings': embeddings
-					}
-		else:
-			user_init_data = [{
-				'user_name': user_name,
-				'password': '123',
-				'embedding': embeddings[id],
-			} 
-			for id in range(embeddings.shape[0])
-			]
-			return user_init_data
-
-	def _get_total_init_user_data(self, return_embedding_as_matrix:bool):
-		
+	def _get_total_init_user_data(self):
 		if self.users_from_json:
 			assert self.json_path is not None
 			with open(self.json_path,'r') as f:
 				user_folders_list = json.load(f)
 
-				self.user_folders = [self.data_folder_path +'/'+ list(ele.values())[0] 
-										for ele in user_folders_list
-										# if '_' in list(ele.values())[0]
-										]
+				self.user_folders = [
+					self.data_folder_path +'/'+ list(ele.values())[0] 
+					for ele in user_folders_list
+				]
 		else:
 			self.user_folders = glob.glob(f"{self.data_folder_path}/*")
 
@@ -118,57 +107,30 @@ class Test_Embeddings(object):
 
 		for user_folder in tqdm(self.user_folders, total = len(self.user_folders)):
 			user_name = os.path.split(user_folder)[-1].split('.')[0]
-			user_init_data = self._run_single_user(user_name = user_name, 
-								return_embedding_as_matrix = return_embedding_as_matrix)
-
-			if return_embedding_as_matrix:
-				master_init_data.append(user_init_data)
-			else:
-				master_init_data.extend(user_init_data)
+			user_init_data = self._run_single_user(user_name = user_name)
+			master_init_data.append(user_init_data)
 		
 		return master_init_data
 	
 
 	def pipelines(self, 
 				run_init_push: bool, 
-				evaluation: bool,
-				return_embedding_as_matrix: bool
+				evaluation: bool
 				):
 		master_config = get_program_config()
-		master_init_data = self._get_total_init_user_data(return_embedding_as_matrix = return_embedding_as_matrix)
+		master_init_data = self._get_total_init_user_data()
 		print('number init data: ',len(master_init_data))
 
-		if run_init_push and not return_embedding_as_matrix:
+		if run_init_push:
 			db_engine = Mongo_Handler(master_config= master_config,
 						ini_push= True,
 						init_data= master_init_data)
 		
 		if evaluation:
-			# db_engine = Mongo_Handler(master_config= master_config,
-			# 			ini_push= False)
-			
-			# result = {}
-			# for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
-			# 	user_name = os.path.split(main_user_dir)[-1].split('.')[0]
-			# 	result_user_embeddings = self._run_single_user(user_name = user_name, 
-			# 										return_embedding_as_matrix = not return_embedding_as_matrix)
-
-			# 	# num_embeddings = len(result_user_embeddings['embeddings'])
-			# 	# step = int(num_embeddings)//3
-			# 	predict_name_list = []
-			# 	# for embedd_idx in range(0, num_embeddings, step):
-			# 		# query_embeddings = result_user_embeddings['embeddings'][embedd_idx: embedd_idx+step,:]
-			# 	pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = result_user_embeddings['embeddings'])
-			# 	predict_name_list.append(pred_name)
-
-			# 	result[user_name] = predict_name_list
-			# print(result)
-
 			result = {}
 			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
 				user_name = os.path.split(main_user_dir)[-1].split('.')[0]
-				user_embeddings_dict = self._run_single_user(user_name = user_name, 
-															return_embedding_as_matrix = return_embedding_as_matrix)
+				user_embeddings_dict = self._run_single_user(user_name = user_name)
 
 				start_time = time.time()
 				score_dict = {
@@ -177,7 +139,7 @@ class Test_Embeddings(object):
 					for user_dict in master_init_data
 				}
 				print(f"processing time: {time.time() - start_time}")
-				print(user_name, score_dict, '\n')
+				# print(user_name, score_dict, '\n')
 				sorted_score_dict = {
 					k:v.item() for k,v in score_dict.items()
 				}

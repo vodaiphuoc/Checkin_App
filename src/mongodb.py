@@ -12,6 +12,24 @@ import time
 from typing import List, Dict, Union, Literal
 import random
 import uuid
+import torch
+
+@torch.compile(fullgraph = True, dynamic = False, mode = 'reduce-overhead')
+def get_cosim(input1:torch.Tensor, input2:torch.Tensor)->torch.Tensor:
+    """
+    input1,input2: torch.Tensor shape (B_{i}, 512)
+    """
+    input2 = torch.cat([input2, input2, input2, input2, input2],dim = 0)
+    norm_1 = torch.unsqueeze(torch.norm(input1, dim =1), dim = 1) 
+    norm_2 = torch.unsqueeze(torch.norm(input2, dim =1), dim = 0)
+    length_mul_matrix = 1/torch.mul(norm_1, norm_2)
+
+    dot_product = torch.matmul(input1, torch.transpose(input2,0,1))
+
+    dot_product_score = torch.mul(dot_product, length_mul_matrix)
+
+    return torch.max(dot_product_score)
+
 
 def generate_bson_vector(vector):
    return Binary.from_vector(vector, BinaryVectorDtype.FLOAT32)
@@ -59,8 +77,7 @@ class Mongo_Handler(object):
         Run for first time setup
         [
             {
-                'image': img dtype: np.ndarray,
-                'embedding': embedding dtype: np.ndarray,
+                'embeddings': embedding dtype: torch.Tensor,
                 'user_name': some_name
             }
         ]
@@ -70,6 +87,10 @@ class Mongo_Handler(object):
             collection = database.create_collection(name= 'Infor')
             # for i in range(len(init_data)):
             #     init_data[i]['embedding'] = generate_bson_vector(init_data[i]['embedding'])
+
+            for i in range(len(init_data)):
+                init_data[i]['embeddings'] = init_data[i]['embeddings'].cpu().tolist()
+
             collection.insert_many(init_data)
         except Exception as e:
             print(e)
@@ -236,6 +257,15 @@ class Mongo_Handler(object):
                                   }
         result_index = list(sorted_candidate_users.keys())[-1]
         return candidate_names[result_index]
+
+    # def searchUserWithEmbeddings_V2(self, query_embedding: torch.Tensor):
+    #     database = self.client["Storage"]
+    #     collection = database["Infor"]
+    #     all_docs = collection.find(filter={})
+
+    #     for doc in all_docs:
+    #         doc['']
+
     
     # for cookie processing
     def insertCookie(self,
