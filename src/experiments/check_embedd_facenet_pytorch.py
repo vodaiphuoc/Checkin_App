@@ -119,7 +119,7 @@ class Test_Embeddings(object):
 				):
 		master_config = get_program_config()
 		master_init_data = self._get_total_init_user_data()
-		print('number init data: ',len(master_init_data))
+		# print('number init data: ',len(master_init_data))
 
 		if run_init_push:
 			db_engine = Mongo_Handler(master_config= master_config,
@@ -127,25 +127,14 @@ class Test_Embeddings(object):
 						init_data= master_init_data)
 		
 		if evaluation:
+			db_engine = Mongo_Handler(master_config= master_config,
+						ini_push= False)
+
 			result = {}
 			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
 				user_name = os.path.split(main_user_dir)[-1].split('.')[0]
 				user_embeddings_dict = self._run_single_user(user_name = user_name)
 
-				start_time = time.time()
-				score_dict = {
-					user_dict['user_name']: get_cosim(user_dict['embeddings'].cpu(), 
-														user_embeddings_dict['embeddings'].cpu())
-					for user_dict in master_init_data
-				}
-				print(f"processing time: {time.time() - start_time}")
-				# print(user_name, score_dict, '\n')
-				sorted_score_dict = {
-					k:v.item() for k,v in score_dict.items()
-				}
-				sorted_score_dict = {k:v for k,v in \
-									sorted(score_dict.items(), key=lambda item: item[1])
-									}
-				result[user_name] = list(sorted_score_dict.keys())[-1]
+				result[user_name] = db_engine.searchUserWithEmbeddings_V2(user_embeddings_dict['embeddings'].cpu())
 
 			print(result)

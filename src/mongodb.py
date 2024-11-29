@@ -14,7 +14,7 @@ import random
 import uuid
 import torch
 
-@torch.compile(fullgraph = True, dynamic = False, mode = 'reduce-overhead')
+@torch.compile()
 def get_cosim(input1:torch.Tensor, input2:torch.Tensor)->torch.Tensor:
     """
     input1,input2: torch.Tensor shape (B_{i}, 512)
@@ -29,6 +29,35 @@ def get_cosim(input1:torch.Tensor, input2:torch.Tensor)->torch.Tensor:
     dot_product_score = torch.mul(dot_product, length_mul_matrix)
 
     return torch.max(dot_product_score)
+
+class UserEmbeddingSearch(object):
+    def __init__(self, user_embedding_list: List[Dict[str, Union[str, list]]]):
+        device = torch.device('cpu')
+        self.master_data = [
+            {
+                'user_name': ele['user_name'],
+                'embeddings': torch.tensor(ele['embeddings'], 
+                                            dtype = torch.float32, 
+                                            device = device)
+            }
+            for ele in user_embedding_list
+        ]
+
+    def search(self, query_embedding: torch.Tensor):
+        score_dict = {
+            user_dict['user_name']: get_cosim(user_dict['embeddings'],
+                                                    query_embedding.cpu())
+            for user_dict in self.master_data
+        }
+        print(f"processing time: {time.time() - start_time}")
+
+        sorted_score_dict = {
+            k:v.item() for k,v in score_dict.items()
+        }
+        sorted_score_dict = {k:v for k,v in \
+            sorted(score_dict.items(), key=lambda item: item[1])
+        }
+        return list(sorted_score_dict.keys())[-1]
 
 
 def generate_bson_vector(vector):
@@ -65,8 +94,16 @@ class Mongo_Handler(object):
             with self.client.start_session() as session:
                 with session.start_transaction():
                     self._ini_insert(init_data= init_data)
+                    self.UserEmbeddingSearch = UserEmbeddingSearch(init_data)
                     # vector_dim = int(master_config['vector_emebd_dim'])
                     # self._make_search_index(vector_dim = vector_dim)
+        # else:
+            # database = self.client["Storage"]
+            # collection = database["Infor"]
+
+            # start_time = time.time()
+            # all_docs = collection.find(filter={})
+            # self.UserEmbeddingSearch = UserEmbeddingSearch(all_docs)
 
     def close(self):
         self.client.close()
@@ -258,14 +295,8 @@ class Mongo_Handler(object):
         result_index = list(sorted_candidate_users.keys())[-1]
         return candidate_names[result_index]
 
-    # def searchUserWithEmbeddings_V2(self, query_embedding: torch.Tensor):
-    #     database = self.client["Storage"]
-    #     collection = database["Infor"]
-    #     all_docs = collection.find(filter={})
-
-    #     for doc in all_docs:
-    #         doc['']
-
+    def searchUserWithEmbeddings_V2(self, query_embedding: torch.Tensor = None):
+        return self.UserEmbeddingSearch.search(query_embedding)
     
     # for cookie processing
     def insertCookie(self,
