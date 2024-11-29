@@ -43,7 +43,7 @@ def get_cosim(input1:torch.Tensor, input2:torch.Tensor)->float:
 
 	dot_product_score = torch.mul(dot_product, length_mul_matrix)
 
-	return torch.max(dot_product_score).item()
+	return torch.max(dot_product_score)
 
 
 class Test_Embeddings(object):
@@ -178,6 +178,9 @@ class Test_Embeddings(object):
 				}
 				print(f"processing time: {time.time() - start_time}")
 				print(user_name, score_dict, '\n')
+				sorted_score_dict = {
+					k:v.item() for k,v in score_dict.items()
+				}
 				sorted_score_dict = {k:v for k,v in \
 									sorted(score_dict.items(), key=lambda item: item[1])
 									}
