@@ -45,6 +45,7 @@ class UserEmbeddingSearch(object):
         ]
 
     def search(self, query_embedding: torch.Tensor):
+        start_time = time.time()
         score_dict = {
             user_dict['user_name']: get_cosim(user_dict['embeddings'],
                                                     query_embedding.cpu())
