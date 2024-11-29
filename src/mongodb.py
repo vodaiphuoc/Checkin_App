@@ -47,8 +47,8 @@ class Mongo_Handler(object):
             with self.client.start_session() as session:
                 with session.start_transaction():
                     self._ini_insert(init_data= init_data)
-                    vector_dim = int(master_config['vector_emebd_dim'])
-                    self._make_search_index(vector_dim = vector_dim)
+                    # vector_dim = int(master_config['vector_emebd_dim'])
+                    # self._make_search_index(vector_dim = vector_dim)
 
     def close(self):
         self.client.close()
@@ -68,8 +68,8 @@ class Mongo_Handler(object):
         database = self.client["Storage"]
         try:
             collection = database.create_collection(name= 'Infor')
-            for i in range(len(init_data)):
-                init_data[i]['embedding'] = generate_bson_vector(init_data[i]['embedding'])
+            # for i in range(len(init_data)):
+            #     init_data[i]['embedding'] = generate_bson_vector(init_data[i]['embedding'])
             collection.insert_many(init_data)
         except Exception as e:
             print(e)

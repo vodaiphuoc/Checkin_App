@@ -27,6 +27,24 @@ import re
 import os
 import json
 
+
+@torch.compile(fullgraph = True)
+def get_cosim(input1:torch.Tensor, input2:torch.Tensor)->float:
+	"""
+	input1,input2: torch.Tensor shape (B_{i}, 512)
+	"""
+	input2 = torch.cat([input2, input2, input2, input2, input2],dim = 0)
+	norm_1 = torch.unsqueeze(torch.norm(input1, dim =1), dim = 1) 
+	norm_2 = torch.unsqueeze(torch.norm(input2, dim =1), dim = 0)
+	length_mul_matrix = 1/torch.mul(norm_1, norm_2)
+
+	dot_product = torch.matmul(input1, torch.transpose(input2,0,1))
+
+	dot_product_score = torch.mul(dot_product, length_mul_matrix)
+
+	return torch.max(dot_product_score).item()
+
+
 class Test_Embeddings(object):
 	def __init__(self,
 				data_folder_path: str,
@@ -108,20 +126,7 @@ class Test_Embeddings(object):
 				master_init_data.extend(user_init_data)
 		
 		return master_init_data
-
-	@staticmethod
-	def get_cosim(input1:torch.Tensor, input2:torch.Tensor)->float:
-		input2 = torch.cat([input2, input2, input2, input2, input2],dim = 0)
-		norm_1 = torch.unsqueeze(torch.norm(input1, dim =1), dim = 1) 
-		norm_2 = torch.unsqueeze(torch.norm(input2, dim =1), dim = 0)
-		length_mul_matrix = 1/torch.mul(norm_1, norm_2)
-
-		dot_product = torch.matmul(input1, torch.transpose(input2,0,1))
-
-		dot_product_score = torch.mul(dot_product, length_mul_matrix)
-
-		return torch.max(dot_product_score).item()
-
+	
 
 	def pipelines(self, 
 				run_init_push: bool, 
@@ -138,41 +143,43 @@ class Test_Embeddings(object):
 						init_data= master_init_data)
 		
 		if evaluation:
-			db_engine = Mongo_Handler(master_config= master_config,
-						ini_push= False)
+			# db_engine = Mongo_Handler(master_config= master_config,
+			# 			ini_push= False)
 			
-			result = {}
-			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
-				user_name = os.path.split(main_user_dir)[-1].split('.')[0]
-				result_user_embeddings = self._run_single_user(user_name = user_name, 
-													return_embedding_as_matrix = not return_embedding_as_matrix)
-
-				# num_embeddings = len(result_user_embeddings['embeddings'])
-				# step = int(num_embeddings)//3
-				predict_name_list = []
-				# for embedd_idx in range(0, num_embeddings, step):
-					# query_embeddings = result_user_embeddings['embeddings'][embedd_idx: embedd_idx+step,:]
-				pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = result_user_embeddings['embeddings'])
-				predict_name_list.append(pred_name)
-
-				result[user_name] = predict_name_list
-			print(result)
-
 			# result = {}
 			# for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
 			# 	user_name = os.path.split(main_user_dir)[-1].split('.')[0]
-			# 	user_embeddings_dict = self._run_single_user(user_name = user_name, 
-			# 												return_embedding_as_matrix = True)
-				
-			# 	score_dict = {
-			# 		user_dict['user_name']: Test_Embeddings.get_cosim(user_dict['embeddings'], 
-			# 														user_embeddings_dict['embeddings'])
-			# 		for user_dict in master_init_data
-			# 	}
-			# 	print(user_name, score_dict, '\n')
-			# 	sorted_score_dict = {k:v for k,v in \
-			# 						sorted(score_dict.items(), key=lambda item: item[1])
-			# 						}
-			# 	result[user_name] = list(sorted_score_dict.keys())[-1]
+			# 	result_user_embeddings = self._run_single_user(user_name = user_name, 
+			# 										return_embedding_as_matrix = not return_embedding_as_matrix)
 
+			# 	# num_embeddings = len(result_user_embeddings['embeddings'])
+			# 	# step = int(num_embeddings)//3
+			# 	predict_name_list = []
+			# 	# for embedd_idx in range(0, num_embeddings, step):
+			# 		# query_embeddings = result_user_embeddings['embeddings'][embedd_idx: embedd_idx+step,:]
+			# 	pred_name = db_engine.searchUserWithEmbeddings(batch_query_embeddings = result_user_embeddings['embeddings'])
+			# 	predict_name_list.append(pred_name)
+
+			# 	result[user_name] = predict_name_list
 			# print(result)
+
+			result = {}
+			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
+				user_name = os.path.split(main_user_dir)[-1].split('.')[0]
+				user_embeddings_dict = self._run_single_user(user_name = user_name, 
+															return_embedding_as_matrix = return_embedding_as_matrix)
+
+				start_time = time.time()
+				score_dict = {
+					user_dict['user_name']: get_cosim(user_dict['embeddings'].cpu(), 
+														user_embeddings_dict['embeddings'].cpu())
+					for user_dict in master_init_data
+				}
+				print(f"processing time: {time.time() - start_time}")
+				print(user_name, score_dict, '\n')
+				sorted_score_dict = {k:v for k,v in \
+									sorted(score_dict.items(), key=lambda item: item[1])
+									}
+				result[user_name] = list(sorted_score_dict.keys())[-1]
+
+			print(result)
