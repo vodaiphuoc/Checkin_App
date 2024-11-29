@@ -13,6 +13,7 @@ from typing import List, Dict, Union, Literal
 import random
 import uuid
 import torch
+import copy
 
 @torch.compile()
 def get_cosim(input1:torch.Tensor, input2:torch.Tensor)->torch.Tensor:
@@ -93,7 +94,7 @@ class Mongo_Handler(object):
             assert init_data is not None
             with self.client.start_session() as session:
                 with session.start_transaction():
-                    self._ini_insert(init_data= init_data)
+                    self._ini_insert(init_data= copy.deepcopy(init_data))
                     self.UserEmbeddingSearch = UserEmbeddingSearch(init_data)
                     # vector_dim = int(master_config['vector_emebd_dim'])
                     # self._make_search_index(vector_dim = vector_dim)

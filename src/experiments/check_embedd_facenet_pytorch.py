@@ -127,8 +127,8 @@ class Test_Embeddings(object):
 						init_data= master_init_data)
 		
 		if evaluation:
-			db_engine = Mongo_Handler(master_config= master_config,
-						ini_push= False)
+			# db_engine = Mongo_Handler(master_config= master_config,
+			# 			ini_push= False)
 
 			result = {}
 			for main_user_dir in glob.glob(f"{self.data_folder_path}/*_*"):
